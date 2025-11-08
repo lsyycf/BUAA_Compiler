@@ -1,6 +1,6 @@
 package frontend.element;
 
-import frontend.config.TokenType;
+import frontend.config.*;
 
 // BType → <INTTK>
 public class BType {

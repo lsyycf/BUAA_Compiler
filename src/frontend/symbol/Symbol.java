@@ -1,8 +1,8 @@
 package frontend.symbol;
 
-import frontend.config.SymbolType;
+import frontend.config.*;
 
-import java.util.ArrayList;
+import java.util.*;
 
 public class Symbol {
     private final String name;

@@ -1,6 +1,6 @@
 package frontend.element;
 
-import frontend.config.TokenType;
+import frontend.config.*;
 
 // FuncType → <VOIDTK> | <INTTK>
 public record FuncType(frontend.element.FuncType.FuncTypeType funcTypeType) {

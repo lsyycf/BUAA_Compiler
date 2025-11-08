@@ -1,12 +1,10 @@
 package frontend.lexer;
 
-import frontend.config.ErrorType;
-import frontend.config.TokenType;
-import frontend.data.ErrorList;
-import frontend.data.TokenList;
+import frontend.config.*;
+import frontend.data.*;
 
-import java.util.ArrayList;
-import java.util.regex.Pattern;
+import java.util.*;
+import java.util.regex.*;
 
 public class Lexer {
     private final Reader reader;

@@ -1,7 +1,7 @@
 package frontend.element;
 
-import frontend.config.TokenType;
-import frontend.lexer.Token;
+import frontend.config.*;
+import frontend.lexer.*;
 
 //  FuncFParam → BType <IDENFR> [<LBRACK> <RBRACK>]
 public class FuncFParam {

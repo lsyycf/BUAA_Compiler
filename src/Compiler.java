@@ -1,17 +1,15 @@
-import backend.data.IrList;
-import backend.ir.IrGenerator;
-import backend.mips.MipsGenerator;
-import frontend.data.ErrorList;
-import frontend.data.SymbolTree;
-import frontend.data.TokenList;
-import frontend.element.CompUnit;
-import frontend.lexer.Lexer;
-import frontend.parser.Parser;
-import frontend.symbol.Visitor;
-import frontend.utils.FileIO;
+import backend.data.*;
+import backend.ir.*;
+import backend.mips.*;
+import frontend.data.*;
+import frontend.element.*;
+import frontend.lexer.*;
+import frontend.parser.*;
+import frontend.symbol.*;
+import frontend.utils.*;
 
-import java.io.IOException;
-import java.util.ArrayList;
+import java.io.*;
+import java.util.*;
 
 public class Compiler {
     private static final ErrorList errorList = new ErrorList();

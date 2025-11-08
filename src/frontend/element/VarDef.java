@@ -1,7 +1,7 @@
 package frontend.element;
 
-import frontend.config.TokenType;
-import frontend.lexer.Token;
+import frontend.config.*;
+import frontend.lexer.*;
 
 // VarDef → <IDENFR> [ <LBRACK> ConstExp <RBRACK> ] | <IDENFR> [ <LBRACK> ConstExp <RBRACK> ] <ASSIGN> InitVal
 public class VarDef {

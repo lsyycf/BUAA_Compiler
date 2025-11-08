@@ -1,8 +1,7 @@
 package frontend.lexer;
 
-import java.util.ArrayList;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.*;
+import java.util.regex.*;
 
 public class Reader {
     private final ArrayList<String> lines;

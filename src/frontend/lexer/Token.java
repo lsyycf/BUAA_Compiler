@@ -1,6 +1,6 @@
 package frontend.lexer;
 
-import frontend.config.TokenType;
+import frontend.config.*;
 
 public record Token(TokenType type, int lineIndex, String token) {
 

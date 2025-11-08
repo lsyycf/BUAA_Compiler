@@ -1,6 +1,6 @@
 package frontend.element;
 
-import java.util.ArrayList;
+import java.util.*;
 
 // CompUnit → {Decl} {FuncDef} MainFuncDef
 public class CompUnit {

@@ -1,8 +1,8 @@
 package frontend.element;
 
-import frontend.config.TokenType;
+import frontend.config.*;
 
-import java.util.ArrayList;
+import java.util.*;
 
 // VarDecl → [ <STATICTK> ] BType VarDef { <COMMA> VarDef } <SEMICN>
 public class VarDecl {

@@ -1,6 +1,6 @@
 package backend.data;
 
-import java.util.HashMap;
+import java.util.*;
 
 public class FuncStack {
     private final String name;

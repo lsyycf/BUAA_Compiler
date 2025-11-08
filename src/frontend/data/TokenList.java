@@ -1,8 +1,8 @@
 package frontend.data;
 
-import frontend.lexer.Token;
+import frontend.lexer.*;
 
-import java.util.ArrayList;
+import java.util.*;
 
 public class TokenList {
     private final ArrayList<Token> tokenList = new ArrayList<>();

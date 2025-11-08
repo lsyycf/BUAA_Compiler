@@ -1,8 +1,8 @@
 package frontend.parser;
 
-import frontend.config.TokenType;
-import frontend.data.TokenList;
-import frontend.lexer.Token;
+import frontend.config.*;
+import frontend.data.*;
+import frontend.lexer.*;
 
 public class Reader {
     private final TokenList tokenList;

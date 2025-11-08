@@ -1,8 +1,8 @@
 package frontend.element;
 
-import frontend.config.TokenType;
+import frontend.config.*;
 
-import java.util.ArrayList;
+import java.util.*;
 
 // FuncFParams → FuncFParam { <COMMA> FuncFParam }
 public class FuncFParams {

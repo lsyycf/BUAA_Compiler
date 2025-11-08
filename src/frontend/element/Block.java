@@ -1,9 +1,9 @@
 package frontend.element;
 
-import frontend.config.TokenType;
-import frontend.lexer.Token;
+import frontend.config.*;
+import frontend.lexer.*;
 
-import java.util.ArrayList;
+import java.util.*;
 
 // Block → <LBRACE> { BlockItem } <RBRACE>
 public class Block {

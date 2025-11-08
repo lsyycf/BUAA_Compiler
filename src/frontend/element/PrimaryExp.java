@@ -1,6 +1,6 @@
 package frontend.element;
 
-import frontend.config.TokenType;
+import frontend.config.*;
 
 // PrimaryExp → <LPARENT> Exp <RPARENT> | LVal | Number
 public class PrimaryExp {

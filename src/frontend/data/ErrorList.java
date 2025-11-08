@@ -1,11 +1,8 @@
 package frontend.data;
 
-import frontend.config.ErrorType;
+import frontend.config.*;
 
-import java.util.Comparator;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.TreeSet;
+import java.util.*;
 
 public class ErrorList {
     private final TreeMap<Integer, TreeSet<ErrorType>> errorMap = new TreeMap<>();

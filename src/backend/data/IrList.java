@@ -1,6 +1,6 @@
 package backend.data;
 
-import java.util.ArrayList;
+import java.util.*;
 
 public class IrList {
     private final ArrayList<Quadruple> irList = new ArrayList<>();

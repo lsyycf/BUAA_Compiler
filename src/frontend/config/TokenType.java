@@ -1,6 +1,6 @@
 package frontend.config;
 
-import java.util.regex.Pattern;
+import java.util.regex.*;
 
 public enum TokenType {
     CONSTTK(true, "const"),

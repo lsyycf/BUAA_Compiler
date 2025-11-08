@@ -1,45 +1,13 @@
 package backend.ir;
 
-import backend.data.IrList;
-import backend.data.Quadruple;
-import frontend.config.SymbolType;
-import frontend.data.SymbolTree;
-import frontend.element.AddExp;
-import frontend.element.Block;
-import frontend.element.BlockItem;
-import frontend.element.CompUnit;
-import frontend.element.Cond;
-import frontend.element.ConstDecl;
-import frontend.element.ConstDef;
-import frontend.element.ConstExp;
-import frontend.element.ConstInitVal;
-import frontend.element.Decl;
-import frontend.element.EqExp;
-import frontend.element.Exp;
-import frontend.element.ForStmt;
-import frontend.element.FuncDef;
-import frontend.element.FuncFParam;
-import frontend.element.FuncFParams;
-import frontend.element.FuncRParams;
-import frontend.element.FuncType;
-import frontend.element.InitVal;
-import frontend.element.LAndExp;
-import frontend.element.LOrExp;
-import frontend.element.LVal;
-import frontend.element.MainFuncDef;
-import frontend.element.MulExp;
+import backend.data.*;
+import frontend.config.*;
+import frontend.data.*;
+import frontend.element.*;
 import frontend.element.Number;
-import frontend.element.PrimaryExp;
-import frontend.element.RelExp;
-import frontend.element.Stmt;
-import frontend.element.UnaryExp;
-import frontend.element.UnaryOp;
-import frontend.element.VarDecl;
-import frontend.element.VarDef;
-import frontend.symbol.Visitor;
+import frontend.symbol.*;
 
-import java.util.ArrayList;
-import java.util.Stack;
+import java.util.*;
 
 public class IrGenerator {
     private final CompUnit compUnit;

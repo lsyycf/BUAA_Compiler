@@ -1,6 +1,6 @@
 package frontend.element;
 
-import frontend.config.TokenType;
+import frontend.config.*;
 
 // MainFuncDef → <INTTK> <MAINTK> <LPARENT> <RPARENT> Block
 public record MainFuncDef(Block block) {

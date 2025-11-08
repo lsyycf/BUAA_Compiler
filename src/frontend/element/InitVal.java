@@ -1,8 +1,8 @@
 package frontend.element;
 
-import frontend.config.TokenType;
+import frontend.config.*;
 
-import java.util.ArrayList;
+import java.util.*;
 
 // InitVal → Exp | <LBRACE> [ Exp { <COMMA> Exp } ] <RBRACE>
 public class InitVal {

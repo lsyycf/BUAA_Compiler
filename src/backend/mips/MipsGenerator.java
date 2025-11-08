@@ -1,11 +1,8 @@
 package backend.mips;
 
-import backend.data.FuncStack;
-import backend.data.IrList;
-import backend.data.Quadruple;
+import backend.data.*;
 
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.*;
 
 public class MipsGenerator {
     private final IrList irList;

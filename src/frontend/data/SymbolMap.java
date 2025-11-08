@@ -1,9 +1,8 @@
 package frontend.data;
 
-import frontend.symbol.Symbol;
+import frontend.symbol.*;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.*;
 
 public class SymbolMap {
     private final int scopeId;

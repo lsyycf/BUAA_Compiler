@@ -1,10 +1,9 @@
 package frontend.data;
 
-import frontend.config.SymbolType;
-import frontend.symbol.Symbol;
+import frontend.config.*;
+import frontend.symbol.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 
 public class SymbolTree {
     private final SymbolMap symbolMap;
