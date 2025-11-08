@@ -1,0 +1,17 @@
+*.txt
+*.iml
+*.zip
+*.py
+*.jar
+*.json
+*.asm
+*.exe
+*.c
+out
+submit
+.idea
+test
+!code.zip
+!lexer.zip
+!parser.zip
+!symbol.zip

@@ -1,0 +1,202 @@
+# SysY 编译器
+
+一个完整的 SysY 语言编译器实现，能够将 SysY 源代码编译为 MIPS 汇编代码。该项目实现了完整的编译流程，包括词法分析、语法分析、语义分析、中间代码生成和目标代码生成。
+
+## 项目简介
+
+本项目是一个基于 Java 实现的编译器，支持将类 C 语言 SysY 编译到 MIPS 汇编代码。编译器采用经典的多阶段编译架构，每个阶段都有清晰的职责划分。
+
+### 主要特性
+
+- ✅ **完整的词法分析**：支持所有 SysY 语言的词法单元
+- ✅ **递归下降语法分析**：实现完整的 SysY 语法解析
+- ✅ **语义分析与错误检测**：支持 13 种错误类型检测
+- ✅ **中间代码生成**：生成四元式中间表示
+- ✅ **MIPS 代码生成**：输出可执行的 MIPS 汇编代码
+
+## 项目结构
+
+```
+Compile/
+├── src/                        # 源代码目录
+│   ├── Compiler.java          # 编译器主入口
+│   ├── config.json            # 配置文件
+│   ├── frontend/              # 前端模块
+│   │   ├── lexer/            # 词法分析器
+│   │   │   ├── Lexer.java    # 词法分析主类
+│   │   │   ├── Token.java    # 词法单元
+│   │   │   └── Reader.java   # 字符流读取器
+│   │   ├── parser/           # 语法分析器
+│   │   │   ├── Parser.java   # 语法分析主类
+│   │   │   └── Reader.java   # Token 流读取器
+│   │   ├── element/          # 语法树节点
+│   │   │   ├── CompUnit.java # 编译单元
+│   │   │   ├── FuncDef.java  # 函数定义
+│   │   │   ├── Stmt.java     # 语句
+│   │   │   └── ...           # 其他语法元素
+│   │   ├── symbol/           # 符号表与语义分析
+│   │   │   ├── Symbol.java   # 符号定义
+│   │   │   └── Visitor.java  # 语义分析访问器
+│   │   ├── config/           # 配置定义
+│   │   │   ├── TokenType.java    # Token 类型枚举
+│   │   │   ├── ErrorType.java    # 错误类型枚举
+│   │   │   └── SymbolType.java   # 符号类型枚举
+│   │   ├── data/             # 数据结构
+│   │   │   ├── TokenList.java    # Token 列表
+│   │   │   ├── ErrorList.java    # 错误列表
+│   │   │   ├── SymbolTree.java   # 符号表树
+│   │   │   └── SymbolMap.java    # 符号映射表
+│   │   └── utils/            # 工具类
+│   │       └── FileIO.java   # 文件读写工具
+│   └── backend/              # 后端模块
+│       ├── ir/               # 中间代码生成
+│       │   └── IrGenerator.java  # IR 生成器
+│       ├── mips/             # MIPS 代码生成
+│       │   └── MipsGenerator.java # MIPS 生成器
+│       └── data/             # 后端数据结构
+│           ├── IrList.java   # IR 指令列表
+│           ├── Quadruple.java # 四元式
+│           └── FuncStack.java # 函数栈帧
+└── README.md                 # 项目文档
+```
+
+## 编译流程
+
+编译器采用经典的多阶段编译架构：
+
+```
+源代码 (testfile.txt)
+    ↓
+[词法分析] Lexer
+    ↓
+Token 流 (lexer.txt)
+    ↓
+[语法分析] Parser
+    ↓
+抽象语法树 (parser.txt)
+    ↓
+[语义分析] Visitor
+    ↓
+符号表 (symbol.txt)
+    ↓
+[中间代码生成] IrGenerator
+    ↓
+四元式 IR (ir.txt)
+    ↓
+[目标代码生成] MipsGenerator
+    ↓
+MIPS 汇编 (mips.txt)
+```
+
+## 支持的语言特性
+
+### 数据类型
+
+- `int`: 整型变量
+- `const int`: 整型常量
+- 一维和二维数组
+
+### 控制结构
+
+- `if-else`: 条件语句
+- `for`: 循环语句
+- `break` / `continue`: 循环控制
+- `return`: 函数返回
+
+### 函数
+
+- 函数定义与调用
+- 参数传递（值传递和数组传递）
+- `void` 和 `int` 返回类型
+- `main` 函数
+
+### 表达式
+
+- 算术运算：`+`, `-`, `*`, `/`, `%`
+- 关系运算：`<`, `<=`, `>`, `>=`, `==`, `!=`
+- 逻辑运算：`&&`, `||`, `!`
+- 数组下标访问
+
+### 输入输出
+
+- `printf`: 格式化输出（支持 `%d` 格式符）
+- `getint()`: 整数输入
+
+## 错误检测
+
+编译器支持以下 13 种错误类型的检测：
+
+| 错误代码 | 错误类型 | 说明 |
+|---------|---------|------|
+| a | 非法符号 | 格式字符串中出现非法字符 |
+| b | 名字重定义 | 变量或函数重复定义 |
+| c | 未定义的名字 | 使用未声明的变量或函数 |
+| d | 函数参数个数不匹配 | 函数调用时参数个数错误 |
+| e | 函数参数类型不匹配 | 函数调用时参数类型错误 |
+| f | 无返回值的函数存在不匹配的return语句 | void 函数中有返回值 |
+| g | 有返回值的函数缺少return语句 | int 函数缺少 return |
+| h | 不能改变常量的值 | 对常量赋值 |
+| i | 缺少分号 | 语句末尾缺少分号 |
+| j | 缺少右小括号 ')' | 括号不匹配 |
+| k | 缺少右中括号 ']' | 数组下标括号不匹配 |
+| l | printf中格式字符与表达式个数不匹配 | printf 格式串错误 |
+| m | 在非循环块中使用break和continue语句 | break/continue 使用位置错误 |
+
+## 编译器版本控制
+
+编译器支持多个版本模式，可在 `Compiler.java` 中设置：
+
+```java
+public enum Version {
+    lexer,   // 仅词法分析
+    parser,  // 词法 + 语法分析
+    symbol,  // 词法 + 语法 + 语义分析
+    code     // 完整编译流程（默认）
+}
+```
+
+## 中间代码格式
+
+编译器生成的中间代码采用四元式格式：
+
+```
+(op, arg1, arg2, result)
+```
+
+示例：
+```
+(add, t1, t2, t3)      // t3 = t1 + t2
+(beq, t1, 0, L1)      // if t1 == 0 goto L1
+(call, func, -, t0)  // t0 = func()
+```
+
+## MIPS 代码生成
+
+生成的 MIPS 代码遵循标准的 MIPS32 指令集，包括：
+
+- 数据段 (`.data`)：全局变量和字符串常量
+- 文本段 (`.text`)：程序代码
+- 寄存器约定：遵循 MIPS 调用约定
+- 栈帧管理：函数调用时的栈帧保存与恢复
+
+## 开发指南
+
+### 添加新的语法特性
+
+1. 在 `frontend/element/` 中添加新的语法树节点类
+2. 在 `Parser.java` 中添加相应的解析方法
+3. 在 `Visitor.java` 中添加语义分析逻辑
+4. 在 `IrGenerator.java` 中添加中间代码生成逻辑
+5. 在 `MipsGenerator.java` 中添加目标代码生成逻辑
+
+### 添加新的错误检测
+
+1. 在 `ErrorType.java` 中定义新的错误类型
+2. 在 `Visitor.java` 中添加错误检测逻辑
+3. 使用 `errorList.addError()` 记录错误
+
+## 常见问题
+
+### Q: 编译器运行后没有生成 mips.txt？
+
+A: 检查 `error.txt` 文件，如果存在致命错误（fatal error），编译器会停止在错误检测阶段，不会生成目标代码。
