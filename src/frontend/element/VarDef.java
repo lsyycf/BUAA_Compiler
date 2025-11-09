@@ -2,9 +2,10 @@ package frontend.element;
 
 import frontend.config.*;
 import frontend.lexer.*;
+import frontend.utils.*;
 
 // VarDef → <IDENFR> [ <LBRACK> ConstExp <RBRACK> ] | <IDENFR> [ <LBRACK> ConstExp <RBRACK> ] <ASSIGN> InitVal
-public class VarDef {
+public class VarDef implements Def {
     private final String idenfr;
     private final int lineIndex;
     private final ConstExp constExp;
@@ -48,14 +49,10 @@ public class VarDef {
 
     @Override
     public String toString() {
-        // <IDENFR> [ <LBRACK> ConstExp <RBRACK> ] | <IDENFR> [ <LBRACK> ConstExp <RBRACK> ] <ASSIGN> InitVal
+        // <IDENFR> [ <LBRACK> ConstExp <RBRACK> ] | <IDENFR> [ <LBRACK> ConstExp
+        // <RBRACK> ] <ASSIGN> InitVal
         StringBuilder sb = new StringBuilder();
-        sb.append(TokenType.IDENFR).append(" ").append(idenfr).append("\n");
-        if (constExp != null) {
-            sb.append(TokenType.LBRACK).append(" [\n");
-            sb.append(constExp).append("\n");
-            sb.append(TokenType.RBRACK).append(" ]\n");
-        }
+        sb.append(ToString.formatIdenfr(idenfr, constExp));
         if (vatDefType == VatDefType.Assign) {
             sb.append(TokenType.ASSIGN).append(" =\n");
             sb.append(initVal).append("\n");
@@ -64,5 +61,7 @@ public class VarDef {
         return sb.toString();
     }
 
-    public enum VatDefType {Idenfr, Assign}
+    public enum VatDefType {
+        Idenfr, Assign
+    }
 }

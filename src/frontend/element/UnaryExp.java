@@ -1,7 +1,7 @@
 package frontend.element;
 
-import frontend.config.*;
 import frontend.lexer.*;
+import frontend.utils.*;
 
 // UnaryExp → PrimaryExp | <IDENFR> <LPARENT> [FuncRParams] <RPARENT> | UnaryOp UnaryExp
 public class UnaryExp {
@@ -61,24 +61,16 @@ public class UnaryExp {
 
     @Override
     public String toString() {
-        // UnaryExp → PrimaryExp | <IDENFR> <LPARENT> [FuncRParams] <RPARENT> | UnaryOp UnaryExp
-        StringBuilder sb = new StringBuilder();
         if (unaryExpType == UnaryExpType.PrimaryExp) {
-            sb.append(primaryExp).append("\n");
+            return primaryExp + "\n<UnaryExp>";
         } else if (unaryExpType == UnaryExpType.FuncRParams) {
-            sb.append(TokenType.IDENFR).append(" ").append(idenfr).append("\n");
-            sb.append(TokenType.LPARENT).append(" (\n");
-            if (funcRParams != null) {
-                sb.append(funcRParams).append("\n");
-            }
-            sb.append(TokenType.RPARENT).append(" )\n");
+            return ToString.formatFuncCall(idenfr, funcRParams) + "<UnaryExp>";
         } else {
-            sb.append(unaryOp).append("\n");
-            sb.append(unaryExp).append("\n");
+            return unaryOp + "\n" + unaryExp + "\n<UnaryExp>";
         }
-        sb.append("<UnaryExp>");
-        return sb.toString();
     }
 
-    public enum UnaryExpType {PrimaryExp, FuncRParams, UnaryOp}
+    public enum UnaryExpType {
+        PrimaryExp, FuncRParams, UnaryOp
+    }
 }

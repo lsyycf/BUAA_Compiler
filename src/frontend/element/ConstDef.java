@@ -2,9 +2,10 @@ package frontend.element;
 
 import frontend.config.*;
 import frontend.lexer.*;
+import frontend.utils.*;
 
 // ConstDef → <IDENFR> [ <LBRACK> ConstExp <RBRACK> ] <ASSIGN> ConstInitVal
-public class ConstDef {
+public class ConstDef implements Def {
     private final String idenfr;
     private final int lineIndex;
     private final ConstExp constExp;
@@ -35,16 +36,6 @@ public class ConstDef {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(TokenType.IDENFR).append(" ").append(idenfr).append("\n");
-        if (constExp != null) {
-            sb.append(TokenType.LBRACK).append(" [\n");
-            sb.append(constExp).append("\n");
-            sb.append(TokenType.RBRACK).append(" ]\n");
-        }
-        sb.append(TokenType.ASSIGN).append(" =\n");
-        sb.append(constInitVal).append("\n");
-        sb.append("<ConstDef>");
-        return sb.toString();
+        return ToString.formatIdenfr(idenfr, constExp) + TokenType.ASSIGN + " =\n" + constInitVal + "\n" + "<ConstDef>";
     }
 }

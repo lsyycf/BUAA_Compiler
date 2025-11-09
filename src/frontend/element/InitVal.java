@@ -1,6 +1,6 @@
 package frontend.element;
 
-import frontend.config.*;
+import frontend.utils.*;
 
 import java.util.*;
 
@@ -38,15 +38,7 @@ public class InitVal {
         if (initValType == InitValType.Exp) {
             sb.append(exp).append("\n");
         } else {
-            sb.append(TokenType.LBRACE).append(" {\n");
-            for (int i = 0; i < expArr.size() - 1; i++) {
-                sb.append(expArr.get(i)).append("\n");
-                sb.append(TokenType.COMMA).append(" ,\n");
-            }
-            if (!expArr.isEmpty()) {
-                sb.append(expArr.get(expArr.size() - 1)).append("\n");
-            }
-            sb.append(TokenType.RBRACE).append(" }\n");
+            sb.append(ToString.formatBrace(expArr));
         }
         sb.append("<InitVal>");
         return sb.toString();

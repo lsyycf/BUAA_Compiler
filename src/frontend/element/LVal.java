@@ -1,7 +1,7 @@
 package frontend.element;
 
-import frontend.config.*;
 import frontend.lexer.*;
+import frontend.utils.*;
 
 // LVal → <IDENFR> [<LBRACK> Exp <RBRACK>]
 public class LVal {
@@ -29,14 +29,6 @@ public class LVal {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(TokenType.IDENFR).append(" ").append(idenfr).append("\n");
-        if (exp != null) {
-            sb.append(TokenType.LBRACK).append(" [\n");
-            sb.append(exp).append("\n");
-            sb.append(TokenType.RBRACK).append(" ]\n");
-        }
-        sb.append("<LVal>");
-        return sb.toString();
+        return ToString.formatIdenfr(idenfr, exp) + "<LVal>";
     }
 }

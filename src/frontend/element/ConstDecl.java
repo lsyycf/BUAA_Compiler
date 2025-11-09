@@ -1,6 +1,7 @@
 package frontend.element;
 
 import frontend.config.*;
+import frontend.utils.*;
 
 import java.util.*;
 
@@ -20,18 +21,7 @@ public class ConstDecl {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(TokenType.CONSTTK).append(" const\n");
-        sb.append(bType).append("\n");
-        for (int i = 0; i < constDef.size() - 1; i++) {
-            sb.append(constDef.get(i)).append("\n");
-            sb.append(TokenType.COMMA).append(" ,\n");
-        }
-        if (!constDef.isEmpty()) {
-            sb.append(constDef.get(constDef.size() - 1)).append("\n");
-        }
-        sb.append(TokenType.SEMICN).append(" ;\n");
-        sb.append("<ConstDecl>");
-        return sb.toString();
+        return TokenType.CONSTTK + " const\n" + bType + "\n" + ToString.formatComma(constDef) + TokenType.SEMICN
+                + " ;\n" + "<ConstDecl>";
     }
 }

@@ -1,6 +1,6 @@
 package frontend.element;
 
-import frontend.config.*;
+import frontend.utils.*;
 
 import java.util.*;
 
@@ -39,15 +39,7 @@ public class ConstInitVal {
         if (constInitValType == ConstInitValType.ConstExp) {
             sb.append(constExp).append("\n");
         } else {
-            sb.append(TokenType.LBRACE).append(" {\n");
-            for (int i = 0; i < constExpArr.size() - 1; i++) {
-                sb.append(constExpArr.get(i)).append("\n");
-                sb.append(TokenType.COMMA).append(" ,\n");
-            }
-            if (!constExpArr.isEmpty()) {
-                sb.append(constExpArr.get(constExpArr.size() - 1)).append("\n");
-            }
-            sb.append(TokenType.RBRACE).append(" }\n");
+            sb.append(ToString.formatBrace(constExpArr));
         }
         sb.append("<ConstInitVal>");
         return sb.toString();

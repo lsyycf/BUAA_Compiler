@@ -33,44 +33,40 @@ public class MipsGenerator {
             String arg2 = quad.arg2();
             String result = quad.result();
             switch (op) {
-                case "main":
-                case "func_begin":
+                case "main", "func_begin" -> {
                     String funcName = (op.equals("main")) ? "main" : arg1;
                     currentFunc = new FuncStack(funcName);
                     currentStack = -8;
-                    break;
-                case "func_end":
-                case "exit":
+                }
+                case "func_end", "exit" -> {
                     if (currentFunc != null) {
                         currentFunc.setStackSize(currentStack);
                         functions.put(currentFunc.getName(), currentFunc);
                     }
                     currentFunc = null;
-                    break;
-                case "func_param":
+                }
+                case "func_param" -> {
                     if (currentFunc != null) {
                         currentFunc.putParam(arg1, Integer.parseInt(arg2) * 4);
                     }
-                    break;
-                case "alloc":
+                }
+                case "alloc" -> {
                     if (currentFunc != null && !result.equals("static")) {
                         currentStack -= 4;
                         currentFunc.putLocal(arg1, currentStack);
                     } else {
                         vars.add(arg1);
                     }
-                    break;
-                case "array_alloc":
+                }
+                case "array_alloc" -> {
                     if (currentFunc != null && !result.equals("static")) {
                         currentStack -= Integer.parseInt(arg2) * 4;
                         currentFunc.putLocal(arg1, currentStack);
                     } else {
                         arrays.put(arg1, Integer.parseInt(arg2));
                     }
-                    break;
-                case "print":
-                    strings.put(result, arg1);
-                    break;
+                }
+                case "print" -> strings.put(result, arg1);
             }
         }
     }
@@ -105,96 +101,50 @@ public class MipsGenerator {
             String arg2 = quad.arg2();
             String result = quad.result();
             switch (op) {
-                case "main":
-                case "func_begin":
-                    generateFuncBegin(op.equals("main") ? "main" : arg1);
-                    break;
-                case "func_end":
-                    generateFuncEnd();
-                    break;
-                case "ret":
-                    generateReturn(arg1);
-                    break;
-                case "assign":
+                case "main", "func_begin" -> generateFuncBegin(op.equals("main") ? "main" : arg1);
+                case "func_end" -> generateFuncEnd();
+                case "ret" -> generateReturn(arg1);
+                case "assign" -> {
                     load(arg1, "$t0");
                     store(result, "$t0");
-                    break;
-                case "store":
-                    generateArrayStore(arg1, arg2, result);
-                    break;
-                case "load":
-                    generateArrayLoad(arg1, arg2, result);
-                    break;
-                case "add":
-                    generateBinaryOp("addu", arg1, arg2, result);
-                    break;
-                case "sub":
-                    generateBinaryOp("subu", arg1, arg2, result);
-                    break;
-                case "mul":
-                    generateBinaryOp("mulu", arg1, arg2, result);
-                    break;
-                case "div":
-                    generateBinaryOp("div", arg1, arg2, result);
-                    break;
-                case "mod":
-                    generateBinaryOp("mod", arg1, arg2, result);
-                    break;
-                case "lt":
-                    generateBinaryOp("slt", arg1, arg2, result);
-                    break;
-                case "gt":
-                    generateBinaryOp("sgt", arg1, arg2, result);
-                    break;
-                case "leq":
-                    generateBinaryOp("sle", arg1, arg2, result);
-                    break;
-                case "geq":
-                    generateBinaryOp("sge", arg1, arg2, result);
-                    break;
-                case "eq":
-                    generateBinaryOp("seq", arg1, arg2, result);
-                    break;
-                case "neq":
-                    generateBinaryOp("sne", arg1, arg2, result);
-                    break;
-                case "label":
-                    textSection.append(result).append(":\n");
-                    break;
-                case "j":
-                    textSection.append("j ").append(result).append("\n");
-                    break;
-                case "beq":
+                }
+                case "store" -> generateArrayStore(arg1, arg2, result);
+                case "load" -> generateArrayLoad(arg1, arg2, result);
+                case "label" -> textSection.append(result).append(":\n");
+                case "j" -> textSection.append("j ").append(result).append("\n");
+                case "beq" -> {
                     load(arg1, "$t0");
                     load(arg2, "$t1");
                     textSection.append("beq $t0, $t1, ").append(result).append("\n");
-                    break;
-                case "param":
-                    generateParam(arg1, arg2);
-                    break;
-                case "call":
-                    generateCall(arg1, arg2, result);
-                    break;
-                case "get_int":
+                }
+                case "param" -> generateParam(arg1, arg2);
+                case "call" -> generateCall(arg1, arg2, result);
+                case "get_int" -> {
                     textSection.append("li $v0, 5\n");
                     textSection.append("syscall\n");
                     store(result, "$v0");
-                    break;
-                case "print":
+                }
+                case "print" -> {
                     textSection.append("la $a0, ").append(result).append("\n");
                     textSection.append("li $v0, 4\n");
                     textSection.append("syscall\n");
-                    break;
-                case "printf":
+                }
+                case "printf" -> {
                     load(arg1, "$a0");
                     textSection.append("li $v0, 1\n");
                     textSection.append("syscall\n");
-                    break;
-                case "exit":
+                }
+                case "exit" -> {
                     generateFuncEnd();
                     textSection.append("li $v0, 10\n");
                     textSection.append("syscall\n");
-                    break;
+                }
+                default -> {
+                    String mips = mips(op);
+                    if (mips != null) {
+                        generateBinaryOp(mips, arg1, arg2, result);
+                    }
+                }
             }
         }
     }
@@ -304,6 +254,23 @@ public class MipsGenerator {
             case "seq" -> (val1 == val2) ? 1 : 0;
             case "sne" -> (val1 != val2) ? 1 : 0;
             default -> 0;
+        };
+    }
+
+    private String mips(String op) {
+        return switch (op) {
+            case "add" -> "addu";
+            case "sub" -> "subu";
+            case "mul" -> "mulu";
+            case "div" -> "div";
+            case "mod" -> "mod";
+            case "lt" -> "slt";
+            case "gt" -> "sgt";
+            case "leq" -> "sle";
+            case "geq" -> "sge";
+            case "eq" -> "seq";
+            case "neq" -> "sne";
+            default -> null;
         };
     }
 

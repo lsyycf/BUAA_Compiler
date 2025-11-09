@@ -1,7 +1,7 @@
 package frontend.element;
 
-import frontend.config.*;
 import frontend.lexer.*;
+import frontend.utils.*;
 
 // FuncDef → FuncType <IDENFR> <LPARENT> [FuncFParams] <RPARENT> Block
 public class FuncDef {
@@ -41,16 +41,6 @@ public class FuncDef {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(funcType).append("\n");
-        sb.append(TokenType.IDENFR).append(" ").append(idenfr).append("\n");
-        sb.append(TokenType.LPARENT).append(" (\n");
-        if (funcFParams != null) {
-            sb.append(funcFParams).append("\n");
-        }
-        sb.append(TokenType.RPARENT).append(" )\n");
-        sb.append(block).append("\n");
-        sb.append("<FuncDef>");
-        return sb.toString();
+        return funcType + "\n" + ToString.formatFuncCall(idenfr, funcFParams) + block + "\n<FuncDef>";
     }
 }

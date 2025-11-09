@@ -1,6 +1,7 @@
 package frontend.element;
 
 import frontend.config.*;
+import frontend.utils.*;
 
 import java.util.*;
 
@@ -31,17 +32,13 @@ public class VarDecl {
             sb.append(TokenType.STATICTK).append(" static\n");
         }
         sb.append(bType).append("\n");
-        for (int i = 0; i < varDef.size() - 1; i++) {
-            sb.append(varDef.get(i)).append("\n");
-            sb.append(TokenType.COMMA).append(" ,\n");
-        }
-        if (!varDef.isEmpty()) {
-            sb.append(varDef.get(varDef.size() - 1)).append("\n");
-        }
+        sb.append(ToString.formatComma(varDef));
         sb.append(TokenType.SEMICN).append(" ;\n");
         sb.append("<VarDecl>");
         return sb.toString();
     }
 
-    public enum VarDeclType {Static, Normal}
+    public enum VarDeclType {
+        Static, Normal
+    }
 }
