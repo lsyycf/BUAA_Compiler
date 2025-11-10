@@ -548,15 +548,14 @@ public class IrGenerator {
     // LOrExp → LAndExp { <OR> LAndExp }
     private void generateLOrExp(LOrExp lOrExp, String labelTrue, String labelFalse, SymbolTree node) {
         ArrayList<LAndExp> lAndExps = lOrExp.getlAndExp();
-        for (int i = 0; i < lAndExps.size(); i++) {
+        for (int i = 0; i < lAndExps.size() - 1; i++) {
             LAndExp lAndExp = lAndExps.get(i);
-            if (i < lAndExps.size() - 1) {
-                String labelNext = newLabel();
-                generateLAndExp(lAndExp, labelTrue, labelNext, node);
-                addQuad("label", null, null, labelNext);
-            } else {
-                generateLAndExp(lAndExp, labelTrue, labelFalse, node);
-            }
+            String labelNext = newLabel();
+            generateLAndExp(lAndExp, labelTrue, labelNext, node);
+            addQuad("label", null, null, labelNext);
+        }
+        if (!lAndExps.isEmpty()) {
+            generateLAndExp(lAndExps.get(lAndExps.size() - 1), labelTrue, labelFalse, node);
         }
     }
 }
