@@ -60,6 +60,20 @@ public class Parser {
         return funcDefs;
     }
 
+    private void consumeError(TokenType tokenType) {
+        ErrorType errorType = switch (tokenType) {
+            case SEMICN -> ErrorType.MISSING_SEMICOLON;
+            case RPARENT -> ErrorType.MISSING_RIGHT_PARENTHESIS;
+            case RBRACK -> ErrorType.MISSING_RIGHT_BRACKET;
+            default -> null;
+        };
+        if (reader.peek(0).type() != tokenType) {
+            errorList.addError(reader.getLineIndex(), errorType);
+        } else {
+            reader.consume(tokenType);
+        }
+    }
+
     // Decl → ConstDecl | VarDecl
     private Decl parseDecl() {
         Token t = reader.peek(0);
@@ -80,11 +94,7 @@ public class Parser {
             reader.consume(TokenType.COMMA);
             constDefs.add(parseConstDef());
         }
-        if (reader.peek(0).type() != TokenType.SEMICN) {
-            errorList.addError(reader.getLineIndex(), ErrorType.MISSING_SEMICOLON);
-        } else {
-            reader.consume(TokenType.SEMICN);
-        }
+        consumeError(TokenType.SEMICN);
         return new ConstDecl(bType, constDefs);
     }
 
@@ -137,11 +147,7 @@ public class Parser {
             reader.consume(TokenType.COMMA);
             varDefs.add(parseVarDef());
         }
-        if (reader.peek(0).type() != TokenType.SEMICN) {
-            errorList.addError(reader.getLineIndex(), ErrorType.MISSING_SEMICOLON);
-        } else {
-            reader.consume(TokenType.SEMICN);
-        }
+        consumeError(TokenType.SEMICN);
         return new VarDecl(varDeclType, bType, varDefs);
     }
 
@@ -163,11 +169,7 @@ public class Parser {
         if (reader.peek(0).type() == TokenType.LBRACK) {
             reader.consume(TokenType.LBRACK);
             constExp = parseConstExp();
-            if (reader.peek(0).type() != TokenType.RBRACK) {
-                errorList.addError(reader.getLineIndex(), ErrorType.MISSING_RIGHT_BRACKET);
-            } else {
-                reader.consume(TokenType.RBRACK);
-            }
+            consumeError(TokenType.RBRACK);
         }
         return constExp;
     }
@@ -201,11 +203,7 @@ public class Parser {
         if (reader.peek(0).type() != TokenType.RPARENT) {
             funcFParams = parseFuncFParams();
         }
-        if (reader.peek(0).type() != TokenType.RPARENT) {
-            errorList.addError(reader.getLineIndex(), ErrorType.MISSING_RIGHT_PARENTHESIS);
-        } else {
-            reader.consume(TokenType.RPARENT);
-        }
+        consumeError(TokenType.RPARENT);
         Block block = parseBlock();
         return new FuncDef(funcType, idenfr, funcFParams, block);
     }
@@ -215,11 +213,7 @@ public class Parser {
         reader.consume(TokenType.INTTK);
         reader.consume(TokenType.MAINTK);
         reader.consume(TokenType.LPARENT);
-        if (reader.peek(0).type() != TokenType.RPARENT) {
-            errorList.addError(reader.getLineIndex(), ErrorType.MISSING_RIGHT_PARENTHESIS);
-        } else {
-            reader.consume(TokenType.RPARENT);
-        }
+        consumeError(TokenType.RPARENT);
         Block block = parseBlock();
         return new MainFuncDef(block);
     }
@@ -264,11 +258,7 @@ public class Parser {
         FuncFParam.FuncFParamType funcFParamType = FuncFParam.FuncFParamType.Int;
         if (reader.peek(0).type() == TokenType.LBRACK) {
             reader.consume(TokenType.LBRACK);
-            if (reader.peek(0).type() != TokenType.RBRACK) {
-                errorList.addError(reader.getLineIndex(), ErrorType.MISSING_RIGHT_BRACKET);
-            } else {
-                reader.consume(TokenType.RBRACK);
-            }
+            consumeError(TokenType.RBRACK);
             funcFParamType = FuncFParam.FuncFParamType.Array;
         }
         return new FuncFParam(bType, idenfr, funcFParamType);
@@ -307,37 +297,33 @@ public class Parser {
     // | <PRINTFTK> <LPARENT> <STRCON> { <COMMA> Exp } <RPARENT> <SEMICN> // i j
     private Stmt parseStmt() {
         Token t = reader.peek(0);
-        if (t.type() == TokenType.LBRACE) {
-            return new Stmt(parseBlock());
-        } else if (t.type() == TokenType.IFTK) {
-            return parseIfStmt();
-        } else if (t.type() == TokenType.FORTK) {
-            return parseForStmtPart();
-        } else if (t.type() == TokenType.PRINTFTK) {
-            return parsePrintStmt();
-        } else if (t.type() == TokenType.RETURNTK) {
-            Token t1 = reader.peek(0);
-            reader.consume(TokenType.RETURNTK);
-            return new Stmt(parseExpEnd(), t1);
-        } else if (t.type() == TokenType.BREAKTK || t.type() == TokenType.CONTINUETK) {
-            Token t1 = reader.peek(0);
-            reader.consume(t.type());
-            if (reader.peek(0).type() != TokenType.SEMICN) {
-                errorList.addError(reader.getLineIndex(), ErrorType.MISSING_SEMICOLON);
-            } else {
-                reader.consume(TokenType.SEMICN);
+        return switch (t.type()) {
+            case LBRACE -> new Stmt(parseBlock());
+            case IFTK -> parseIfStmt();
+            case FORTK -> parseForStmtPart();
+            case PRINTFTK -> parsePrintStmt();
+            case RETURNTK -> {
+                Token t1 = reader.peek(0);
+                reader.consume(TokenType.RETURNTK);
+                yield new Stmt(parseExpEnd(), t1);
             }
-            return new Stmt(t1);
-        } else {
-            Stmt.StmtType stmtType = getStmtType();
-            if (stmtType == null) {
-                return null;
-            } else if (stmtType == Stmt.StmtType.LVal) {
-                return parseLvalStmt();
-            } else {
-                return new Stmt(parseExpEnd());
+            case BREAKTK, CONTINUETK -> {
+                Token t1 = reader.peek(0);
+                reader.consume(t.type());
+                consumeError(TokenType.SEMICN);
+                yield new Stmt(t1);
             }
-        }
+            default -> {
+                Stmt.StmtType stmtType = getStmtType();
+                if (stmtType == null) {
+                    yield null;
+                } else if (stmtType == Stmt.StmtType.LVal) {
+                    yield parseLvalStmt();
+                } else {
+                    yield new Stmt(parseExpEnd());
+                }
+            }
+        };
     }
 
     private Stmt parseLvalStmt() {
@@ -345,11 +331,7 @@ public class Parser {
         if (reader.peek(0).type() == TokenType.ASSIGN) {
             reader.consume(TokenType.ASSIGN);
             Exp exp = parseExp();
-            if (reader.peek(0).type() != TokenType.SEMICN) {
-                errorList.addError(reader.getLineIndex(), ErrorType.MISSING_SEMICOLON);
-            } else {
-                reader.consume(TokenType.SEMICN);
-            }
+            consumeError(TokenType.SEMICN);
             return new Stmt(lVal, exp);
         }
         return null;
@@ -375,11 +357,7 @@ public class Parser {
         reader.consume(TokenType.IFTK);
         reader.consume(TokenType.LPARENT);
         Cond cond = parseCond();
-        if (reader.peek(0).type() != TokenType.RPARENT) {
-            errorList.addError(reader.getLineIndex(), ErrorType.MISSING_RIGHT_PARENTHESIS);
-        } else {
-            reader.consume(TokenType.RPARENT);
-        }
+        consumeError(TokenType.RPARENT);
         Stmt stmt = parseStmt();
         Stmt stmtElse = null;
         if (reader.notEnd() && reader.peek(0).type() == TokenType.ELSETK) {
@@ -406,11 +384,7 @@ public class Parser {
         if (reader.peek(0).type() != TokenType.RPARENT) {
             forStmtRight = parseForStmt();
         }
-        if (reader.peek(0).type() != TokenType.RPARENT) {
-            errorList.addError(reader.getLineIndex(), ErrorType.MISSING_RIGHT_PARENTHESIS);
-        } else {
-            reader.consume(TokenType.RPARENT);
-        }
+        consumeError(TokenType.RPARENT);
         Stmt stmt = parseStmt();
         return new Stmt(forStmtLeft, cond, forStmtRight, stmt);
     }
@@ -429,16 +403,8 @@ public class Parser {
                 exps.add(exp);
             }
         }
-        if (reader.peek(0).type() != TokenType.RPARENT) {
-            errorList.addError(reader.getLineIndex(), ErrorType.MISSING_RIGHT_PARENTHESIS);
-        } else {
-            reader.consume(TokenType.RPARENT);
-        }
-        if (reader.peek(0).type() != TokenType.SEMICN) {
-            errorList.addError(reader.getLineIndex(), ErrorType.MISSING_SEMICOLON);
-        } else {
-            reader.consume(TokenType.SEMICN);
-        }
+        consumeError(TokenType.RPARENT);
+        consumeError(TokenType.SEMICN);
         return new Stmt(t1, strCon.getStrCon(), exps);
     }
 
@@ -447,11 +413,7 @@ public class Parser {
         if (reader.peek(0).type() != TokenType.SEMICN) {
             exp = parseExp();
         }
-        if (reader.peek(0).type() != TokenType.SEMICN) {
-            errorList.addError(reader.getLineIndex(), ErrorType.MISSING_SEMICOLON);
-        } else {
-            reader.consume(TokenType.SEMICN);
-        }
+        consumeError(TokenType.SEMICN);
         return exp;
     }
 
@@ -501,11 +463,7 @@ public class Parser {
         if (reader.peek(0).type() == TokenType.LBRACK) {
             reader.consume(TokenType.LBRACK);
             exp = parseExp();
-            if (reader.peek(0).type() != TokenType.RBRACK) {
-                errorList.addError(reader.getLineIndex(), ErrorType.MISSING_RIGHT_BRACKET);
-            } else {
-                reader.consume(TokenType.RBRACK);
-            }
+            consumeError(TokenType.RBRACK);
         }
         return new LVal(idenfr, exp);
     }
@@ -519,11 +477,7 @@ public class Parser {
             if (exp == null) {
                 return null;
             }
-            if (reader.peek(0).type() != TokenType.RPARENT) {
-                errorList.addError(reader.getLineIndex(), ErrorType.MISSING_RIGHT_PARENTHESIS);
-            } else {
-                reader.consume(TokenType.RPARENT);
-            }
+            consumeError(TokenType.RPARENT);
             return new PrimaryExp(exp);
         } else if (t.type() == TokenType.IDENFR) {
             return new PrimaryExp(parseLVal());
@@ -570,11 +524,7 @@ public class Parser {
         if (reader.peek(0).type() != TokenType.RPARENT) {
             funcRParams = parseFuncRParams();
         }
-        if (reader.peek(0).type() != TokenType.RPARENT) {
-            errorList.addError(reader.getLineIndex(), ErrorType.MISSING_RIGHT_PARENTHESIS);
-        } else {
-            reader.consume(TokenType.RPARENT);
-        }
+        consumeError(TokenType.RPARENT);
         return new UnaryExp(idenfr, funcRParams);
     }
 
@@ -582,17 +532,13 @@ public class Parser {
     // UnaryOp → <PLUS> | <MINU> | <NOT>
     private UnaryOp parseUnaryOp() {
         Token t = reader.peek(0);
-        if (t.type() == TokenType.PLUS) {
-            reader.consume(TokenType.PLUS);
-            return new UnaryOp(UnaryOp.UnaryOpType.Plus);
-        } else if (t.type() == TokenType.MINU) {
-            reader.consume(TokenType.MINU);
-            return new UnaryOp(UnaryOp.UnaryOpType.Minu);
-        } else if (t.type() == TokenType.NOT) {
-            reader.consume(TokenType.NOT);
-            return new UnaryOp(UnaryOp.UnaryOpType.Not);
-        }
-        return null;
+        reader.consume(t.type());
+        return switch (t.type()) {
+            case PLUS -> new UnaryOp(UnaryOp.UnaryOpType.Plus);
+            case MINU -> new UnaryOp(UnaryOp.UnaryOpType.Minu);
+            case NOT -> new UnaryOp(UnaryOp.UnaryOpType.Not);
+            default -> null;
+        };
     }
 
     // FuncRParams → Exp { <COMMA> Exp }
@@ -628,15 +574,11 @@ public class Parser {
         TokenType type;
         while (reader.notEnd() && ((type = reader.peek(0).type()) == TokenType.MULT || type == TokenType.DIV || type == TokenType.MOD)) {
             Token t = reader.peek(0);
-            if (t.type() == TokenType.MULT) {
-                reader.consume(TokenType.MULT);
-                mulExpTypes.add(MulExp.MulExpType.Mult);
-            } else if (t.type() == TokenType.DIV) {
-                reader.consume(TokenType.DIV);
-                mulExpTypes.add(MulExp.MulExpType.Div);
-            } else if (t.type() == TokenType.MOD) {
-                reader.consume(TokenType.MOD);
-                mulExpTypes.add(MulExp.MulExpType.Mod);
+            reader.consume(t.type());
+            switch (t.type()) {
+                case MULT -> mulExpTypes.add(MulExp.MulExpType.Mult);
+                case DIV -> mulExpTypes.add(MulExp.MulExpType.Div);
+                case MOD -> mulExpTypes.add(MulExp.MulExpType.Mod);
             }
             unaryExps.add(parseUnaryExp());
         }
@@ -655,12 +597,10 @@ public class Parser {
         TokenType type;
         while (reader.notEnd() && ((type = reader.peek(0).type()) == TokenType.PLUS || type == TokenType.MINU)) {
             Token t = reader.peek(0);
-            if (t.type() == TokenType.PLUS) {
-                reader.consume(TokenType.PLUS);
-                addExpTypes.add(AddExp.AddExpType.Plus);
-            } else if (t.type() == TokenType.MINU) {
-                reader.consume(TokenType.MINU);
-                addExpTypes.add(AddExp.AddExpType.Minu);
+            reader.consume(t.type());
+            switch (t.type()) {
+                case PLUS -> addExpTypes.add(AddExp.AddExpType.Plus);
+                case MINU -> addExpTypes.add(AddExp.AddExpType.Minu);
             }
             mulExps.add(parseMulExp());
         }
@@ -679,18 +619,12 @@ public class Parser {
         TokenType type;
         while (reader.notEnd() && ((type = reader.peek(0).type()) == TokenType.LSS || type == TokenType.GRE || type == TokenType.LEQ || type == TokenType.GEQ)) {
             Token t = reader.peek(0);
-            if (t.type() == TokenType.LSS) {
-                reader.consume(TokenType.LSS);
-                relExpTypes.add(RelExp.RelExpType.Lss);
-            } else if (t.type() == TokenType.GRE) {
-                reader.consume(TokenType.GRE);
-                relExpTypes.add(RelExp.RelExpType.Gre);
-            } else if (t.type() == TokenType.LEQ) {
-                reader.consume(TokenType.LEQ);
-                relExpTypes.add(RelExp.RelExpType.Leq);
-            } else {
-                reader.consume(TokenType.GEQ);
-                relExpTypes.add(RelExp.RelExpType.Geq);
+            reader.consume(t.type());
+            switch (t.type()) {
+                case LSS -> relExpTypes.add(RelExp.RelExpType.Lss);
+                case GRE -> relExpTypes.add(RelExp.RelExpType.Gre);
+                case LEQ -> relExpTypes.add(RelExp.RelExpType.Leq);
+                case GEQ -> relExpTypes.add(RelExp.RelExpType.Geq);
             }
             addExps.add(parseAddExp());
         }
@@ -705,12 +639,10 @@ public class Parser {
         TokenType type;
         while (reader.notEnd() && ((type = reader.peek(0).type()) == TokenType.EQL || type == TokenType.NEQ)) {
             Token t = reader.peek(0);
-            if (t.type() == TokenType.EQL) {
-                reader.consume(TokenType.EQL);
-                eqExpTypes.add(EqExp.EqExpType.Eql);
-            } else {
-                reader.consume(TokenType.NEQ);
-                eqExpTypes.add(EqExp.EqExpType.Neq);
+            reader.consume(t.type());
+            switch (t.type()) {
+                case EQL -> eqExpTypes.add(EqExp.EqExpType.Eql);
+                case NEQ -> eqExpTypes.add(EqExp.EqExpType.Neq);
             }
             relExps.add(parseRelExp());
         }

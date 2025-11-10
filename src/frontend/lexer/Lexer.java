@@ -59,7 +59,7 @@ public class Lexer {
             if (reader.peekStr(1).equals("|")) {
                 tokenList.addToken(new Token(TokenType.OR, reader.getLineIndex(), "||"));
             } else if (reader.peekStr(1).equals("&")) {
-                tokenList.addToken(new Token(TokenType.OR, reader.getLineIndex(), "&&"));
+                tokenList.addToken(new Token(TokenType.AND, reader.getLineIndex(), "&&"));
             }
             reader.consume(1);
         }

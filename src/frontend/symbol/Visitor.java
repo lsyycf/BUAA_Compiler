@@ -45,12 +45,11 @@ public class Visitor {
     }
 
     private static SymbolType getPrimaryExpType(PrimaryExp primaryExp, SymbolTree node) {
-        if (primaryExp.getPrimaryExpType() == PrimaryExp.PrimaryExpType.Exp) {
-            return getExpType(primaryExp.getExp(), node);
-        } else if (primaryExp.getPrimaryExpType() == PrimaryExp.PrimaryExpType.Number) {
-            return SymbolType.Int;
-        }
-        return getLValType(primaryExp.getLval(), node);
+        return switch (primaryExp.getPrimaryExpType()) {
+            case Exp -> getExpType(primaryExp.getExp(), node);
+            case Number -> SymbolType.Int;
+            case LVal -> getLValType(primaryExp.getLval(), node);
+        };
     }
 
     private static SymbolType getUnaryExpType(UnaryExp unaryExp, SymbolTree node) {
@@ -69,11 +68,10 @@ public class Visitor {
         ArrayList<AddExp.AddExpType> ops = addExp.getAddExpType();
         int res = evaMulExp(mulExps.get(0), node);
         for (int i = 1; i < mulExps.size(); i++) {
-            if (ops.get(i - 1) == AddExp.AddExpType.Plus) {
-                res += evaMulExp(mulExps.get(i), node);
-            } else {
-                res -= evaMulExp(mulExps.get(i), node);
-            }
+            res = switch (ops.get(i - 1)) {
+                case Plus -> res + evaMulExp(mulExps.get(i), node);
+                case Minu -> res - evaMulExp(mulExps.get(i), node);
+            };
         }
         return res;
     }
@@ -83,34 +81,29 @@ public class Visitor {
         ArrayList<MulExp.MulExpType> ops = mulExp.getMulExpType();
         int res = evaUnaryExp(unaryExps.get(0), node);
         for (int i = 1; i < unaryExps.size(); i++) {
-            if (ops.get(i - 1) == MulExp.MulExpType.Mult) {
-                res *= evaUnaryExp(unaryExps.get(i), node);
-            } else if (ops.get(i - 1) == MulExp.MulExpType.Div) {
-                res /= evaUnaryExp(unaryExps.get(i), node);
-            } else {
-                res %= evaUnaryExp(unaryExps.get(i), node);
-            }
+            res = switch (ops.get(i - 1)) {
+                case Mult -> res * evaUnaryExp(unaryExps.get(i), node);
+                case Div -> res / evaUnaryExp(unaryExps.get(i), node);
+                case Mod -> res % evaUnaryExp(unaryExps.get(i), node);
+            };
         }
         return res;
     }
 
     private static int evaUnaryExp(UnaryExp unaryExp, SymbolTree node) {
-        if (unaryExp.getUnaryExpType() == UnaryExp.UnaryExpType.PrimaryExp) {
-            return evaPrimaryExp(unaryExp.getPrimaryExp(), node);
-        } else if (unaryExp.getUnaryExpType() == UnaryExp.UnaryExpType.UnaryOp) {
-            return evaUnaryOp(unaryExp, node);
-        }
-        return 0;
+        return switch (unaryExp.getUnaryExpType()) {
+            case PrimaryExp -> evaPrimaryExp(unaryExp.getPrimaryExp(), node);
+            case UnaryOp -> evaUnaryOp(unaryExp, node);
+            case FuncRParams -> 0;
+        };
     }
 
     private static int evaPrimaryExp(PrimaryExp primaryExp, SymbolTree node) {
-        if (primaryExp.getPrimaryExpType() == PrimaryExp.PrimaryExpType.Exp) {
-            return evaExp(primaryExp.getExp(), node);
-        } else if (primaryExp.getPrimaryExpType() == PrimaryExp.PrimaryExpType.Number) {
-            return evaNumber(primaryExp.getNumber());
-        } else {
-            return evaLVal(primaryExp.getLval(), node);
-        }
+        return switch (primaryExp.getPrimaryExpType()) {
+            case Exp -> evaExp(primaryExp.getExp(), node);
+            case Number -> evaNumber(primaryExp.getNumber());
+            case LVal -> evaLVal(primaryExp.getLval(), node);
+        };
     }
 
     private static int evaExp(Exp exp, SymbolTree node) {
@@ -126,23 +119,19 @@ public class Visitor {
         Symbol symbol = node.findSymbolRecursive(idenfr, lval.getLineIndex()).getSymbol(idenfr);
         if (symbol.getType() == SymbolType.ConstInt) {
             return symbol.getEvaluations().get(0);
-        } else if (symbol.getType() == SymbolType.ConstIntArray) {
+        } else {
             ArrayList<Integer> constList = symbol.getEvaluations();
             int index = evaExp(lval.getExp(), node);
             return constList.get(index);
         }
-        return 0;
     }
 
     private static int evaUnaryOp(UnaryExp unaryExp, SymbolTree node) {
-        UnaryOp.UnaryOpType opType = unaryExp.getUnaryOp().unaryOpType();
-        if (opType == UnaryOp.UnaryOpType.Plus) {
-            return evaUnaryExp(unaryExp.getUnaryExp(), node);
-        } else if (opType == UnaryOp.UnaryOpType.Minu) {
-            return -evaUnaryExp(unaryExp.getUnaryExp(), node);
-        } else {
-            return evaUnaryExp(unaryExp.getUnaryExp(), node) == 0 ? 1 : 0;
-        }
+        return switch (unaryExp.getUnaryOp().unaryOpType()) {
+            case Plus -> evaUnaryExp(unaryExp.getUnaryExp(), node);
+            case Minu -> -evaUnaryExp(unaryExp.getUnaryExp(), node);
+            case Not -> evaUnaryExp(unaryExp.getUnaryExp(), node) == 0 ? 1 : 0;
+        };
     }
 
     // CompUnit → {Decl} {FuncDef} MainFuncDef
@@ -224,12 +213,10 @@ public class Visitor {
 
     // VarDef → <IDENFR> [ <LBRACK> ConstExp <RBRACK> ] | <IDENFR> [ <LBRACK> ConstExp <RBRACK> ] <ASSIGN> InitVal
     private void visitVarDef(VarDef varDef, SymbolTree node, VarDecl.VarDeclType varDeclType) {
-        SymbolType type;
-        if (varDeclType == VarDecl.VarDeclType.Static) {
-            type = varDef.getConstExp() == null ? SymbolType.StaticInt : SymbolType.StaticIntArray;
-        } else {
-            type = varDef.getConstExp() == null ? SymbolType.Int : SymbolType.IntArray;
-        }
+        SymbolType type = switch (varDeclType) {
+            case Static -> varDef.getConstExp() == null ? SymbolType.StaticInt : SymbolType.StaticIntArray;
+            case Normal -> varDef.getConstExp() == null ? SymbolType.Int : SymbolType.IntArray;
+        };
         visitIndex(varDef, node, type);
         if (varDef.getInitVal() != null) {
             visitInitVal(varDef.getInitVal(), node);
@@ -310,12 +297,7 @@ public class Visitor {
 
     // FuncFParam → BType <IDENFR> [<LBRACK> <RBRACK>]
     private void visitFuncFParam(FuncFParam funcFParam, SymbolTree node) {
-        SymbolType type;
-        if (funcFParam.getFuncFParamType() == FuncFParam.FuncFParamType.Array) {
-            type = SymbolType.IntArray;
-        } else {
-            type = SymbolType.Int;
-        }
+        SymbolType type = funcFParam.getFuncFParamType() == FuncFParam.FuncFParamType.Array ? SymbolType.IntArray : SymbolType.Int;
         String name = funcFParam.getIdenfr();
         if (node.findSymbol(name)) {
             errorList.addError(funcFParam.getLineIndex(), ErrorType.NAME_REDEFINITION);
@@ -353,41 +335,48 @@ public class Visitor {
     // | <RETURNTK> [Exp] <SEMICN>
     // | <PRINTFTK> <LPARENT> <STRCON> { <COMMA> Exp } <RPARENT> <SEMICN>
     private void visitStmt(Stmt stmt, SymbolTree node) {
-        if (stmt.getStmtType() == Stmt.StmtType.Block) {
-            scopeCounter++;
-            visitBlock(stmt.getBlock(), node);
-        } else if (stmt.getStmtType() == Stmt.StmtType.For) {
-            visitForStmtPart(stmt, node);
-        } else if (stmt.getStmtType() == Stmt.StmtType.Print) {
-            visitPrintStmt(stmt, node);
-        } else if (stmt.getStmtType() == Stmt.StmtType.Exp) {
-            if (stmt.getExp() != null) {
-                visitExp(stmt.getExp(), node);
+        switch (stmt.getStmtType()) {
+            case Block -> {
+                scopeCounter++;
+                visitBlock(stmt.getBlock(), node);
             }
-        } else if (stmt.getStmtType() == Stmt.StmtType.If) {
-            visitCond(stmt.getCondIf(), node);
-            visitStmt(stmt.getStmtIf(), node);
-            if (stmt.getStmtElse() != null) {
-                visitStmt(stmt.getStmtElse(), node);
+            case For -> visitForStmtPart(stmt, node);
+            case Print -> visitPrintStmt(stmt, node);
+            case Exp -> {
+                if (stmt.getExp() != null) {
+                    visitExp(stmt.getExp(), node);
+                }
             }
-        } else if (stmt.getStmtType() == Stmt.StmtType.Break || stmt.getStmtType() == Stmt.StmtType.Continue) {
-            if (loopDeep == 0) {
-                errorList.addError(stmt.getLineIndex(), ErrorType.BREAK_CONTINUE_OUT_LOOP);
-                stmt.clear();
+            case If -> {
+                visitCond(stmt.getCondIf(), node);
+                visitStmt(stmt.getStmtIf(), node);
+                if (stmt.getStmtElse() != null) {
+                    visitStmt(stmt.getStmtElse(), node);
+                }
             }
-        } else if (stmt.getStmtType() == Stmt.StmtType.Return) {
-            if (stmt.getExpReturn() != null) {
-                visitExp(stmt.getExpReturn(), node);
+            case Break, Continue -> {
+                if (loopDeep == 0) {
+                    errorList.addError(stmt.getLineIndex(), ErrorType.BREAK_CONTINUE_OUT_LOOP);
+                    stmt.clear();
+                }
             }
-        } else {
-            String idenfr = stmt.getlVal().getIdenfr();
-            SymbolMap symbolMap = node.findSymbolRecursive(idenfr, -1);
-            if (symbolMap != null && (symbolMap.getSymbol(idenfr).getType() == SymbolType.ConstInt || symbolMap.getSymbol(idenfr).getType() == SymbolType.ConstIntArray)) {
-                errorList.addError(stmt.getlVal().getLineIndex(), ErrorType.CONSTANT_MODIFICATION);
+            case Return -> {
+                if (stmt.getExpReturn() != null) {
+                    visitExp(stmt.getExpReturn(), node);
+                }
             }
-            visitLVal(stmt.getlVal(), node);
-            visitExp(stmt.getExpLVal(), node);
+            case LVal -> visitLvalStmt(stmt, node);
         }
+    }
+
+    private void visitLvalStmt(Stmt stmt, SymbolTree node) {
+        String idenfr = stmt.getlVal().getIdenfr();
+        SymbolMap symbolMap = node.findSymbolRecursive(idenfr, -1);
+        if (symbolMap != null && (symbolMap.getSymbol(idenfr).getType() == SymbolType.ConstInt || symbolMap.getSymbol(idenfr).getType() == SymbolType.ConstIntArray)) {
+            errorList.addError(stmt.getlVal().getLineIndex(), ErrorType.CONSTANT_MODIFICATION);
+        }
+        visitLVal(stmt.getlVal(), node);
+        visitExp(stmt.getExpLVal(), node);
     }
 
     private void visitForStmtPart(Stmt stmt, SymbolTree node) {
@@ -484,26 +473,26 @@ public class Visitor {
             Symbol symbol = symbolMap.getSymbol(name);
             ArrayList<SymbolType> formalParams = symbol.getParamTypes();
             FuncRParams actualParams = unaryExp.getFuncRParams();
-            int formalCount = formalParams.size();
-            int actualCount = 0;
-            if (actualParams != null) {
-                actualCount = actualParams.getExp().size();
-            }
-            if (formalCount != actualCount) {
+            int actualCount = actualParams == null ? 0 : actualParams.getExp().size();
+            if (formalParams.size() != actualCount) {
                 errorList.addError(unaryExp.getLineIndex(), ErrorType.PARAM_COUNT_MISMATCH);
             } else {
-                for (int i = 0; i < formalCount; i++) {
-                    SymbolType formalType = formalParams.get(i);
-                    Exp actualExp = actualParams.getExp().get(i);
-                    SymbolType actualType = getExpType(actualExp, node);
-                    if (formalType != actualType) {
-                        errorList.addError(unaryExp.getLineIndex(), ErrorType.PARAM_TYPE_MISMATCH);
-                    }
-                }
+                checkFunc(unaryExp, formalParams, actualParams, node);
             }
         }
         if (unaryExp.getFuncRParams() != null) {
             visitFuncFRarams(unaryExp.getFuncRParams(), node);
+        }
+    }
+
+    private void checkFunc(UnaryExp unaryExp, ArrayList<SymbolType> formalParams, FuncRParams actualParams, SymbolTree node) {
+        for (int i = 0; i < formalParams.size(); i++) {
+            SymbolType formalType = formalParams.get(i);
+            Exp actualExp = actualParams.getExp().get(i);
+            SymbolType actualType = getExpType(actualExp, node);
+            if (formalType != actualType) {
+                errorList.addError(unaryExp.getLineIndex(), ErrorType.PARAM_TYPE_MISMATCH);
+            }
         }
     }
 
@@ -570,20 +559,21 @@ public class Visitor {
     }
 
     private void checkStmt(Stmt stmt) {
-        if (stmt.getStmtType() == Stmt.StmtType.Return) {
-            if (stmt.getExpReturn() != null) {
-                errorList.addError(stmt.getLineIndex(), ErrorType.INVALID_RETURN);
-                stmt.clearExpReturn();
+        switch (stmt.getStmtType()) {
+            case Return -> {
+                if (stmt.getExpReturn() != null) {
+                    errorList.addError(stmt.getLineIndex(), ErrorType.INVALID_RETURN);
+                    stmt.clearExpReturn();
+                }
             }
-        } else if (stmt.getStmtType() == Stmt.StmtType.Block) {
-            checkBlock(stmt.getBlock());
-        } else if (stmt.getStmtType() == Stmt.StmtType.If) {
-            checkStmt(stmt.getStmtIf());
-            if (stmt.getStmtElse() != null) {
-                checkStmt(stmt.getStmtElse());
+            case Block -> checkBlock(stmt.getBlock());
+            case If -> {
+                checkStmt(stmt.getStmtIf());
+                if (stmt.getStmtElse() != null) {
+                    checkStmt(stmt.getStmtElse());
+                }
             }
-        } else if (stmt.getStmtType() == Stmt.StmtType.For) {
-            checkStmt(stmt.getStmtFor());
+            case For -> checkStmt(stmt.getStmtFor());
         }
     }
 

@@ -1,6 +1,7 @@
 package backend.mips;
 
 import backend.data.*;
+import backend.utils.*;
 
 import java.util.*;
 
@@ -33,12 +34,11 @@ public class MipsGenerator {
             String arg2 = quad.arg2();
             String result = quad.result();
             switch (op) {
-                case "main", "func_begin" -> {
-                    String funcName = (op.equals("main")) ? "main" : arg1;
-                    currentFunc = new FuncStack(funcName);
+                case "func_begin" -> {
+                    currentFunc = new FuncStack(arg1);
                     currentStack = -8;
                 }
-                case "func_end", "exit" -> {
+                case "func_end" -> {
                     if (currentFunc != null) {
                         currentFunc.setStackSize(currentStack);
                         functions.put(currentFunc.getName(), currentFunc);
@@ -86,7 +86,7 @@ public class MipsGenerator {
         for (HashMap.Entry<String, String> entry : strings.entrySet()) {
             String label = entry.getKey();
             String content = entry.getValue();
-            dataSection.append(label).append(": .asciiz \"").append(replace(content)).append("\"\n");
+            dataSection.append(label).append(": .asciiz \"").append(content.replace("\"", "\\\"")).append("\"\n");
         }
         dataSection.append("\n");
     }
@@ -101,7 +101,7 @@ public class MipsGenerator {
             String arg2 = quad.arg2();
             String result = quad.result();
             switch (op) {
-                case "main", "func_begin" -> generateFuncBegin(op.equals("main") ? "main" : arg1);
+                case "func_begin" -> generateFuncBegin(arg1);
                 case "func_end" -> generateFuncEnd();
                 case "ret" -> generateReturn(arg1);
                 case "assign" -> {
@@ -134,23 +134,19 @@ public class MipsGenerator {
                     textSection.append("li $v0, 1\n");
                     textSection.append("syscall\n");
                 }
-                case "exit" -> {
-                    generateFuncEnd();
-                    textSection.append("li $v0, 10\n");
-                    textSection.append("syscall\n");
-                }
                 default -> {
-                    String mips = mips(op);
-                    if (mips != null) {
-                        generateBinaryOp(mips, arg1, arg2, result);
+                    if (Calculate.canCalculate(op)) {
+                        generateBinaryOp(op, arg1, arg2, result);
                     }
                 }
             }
         }
+        textSection.append("li $v0, 10\n");
+        textSection.append("syscall\n");
     }
 
     private void load(String var, String reg) {
-        if (isNumber(var)) {
+        if (Calculate.isNumber(var)) {
             textSection.append("li ").append(reg).append(", ").append(var).append("\n");
         } else if (currentFunc != null && currentFunc.containsLocal(var)) {
             int offset = currentFunc.getLocalOffsets().get(var);
@@ -220,8 +216,8 @@ public class MipsGenerator {
     }
 
     private void generateBinaryOp(String op, String arg1, String arg2, String result) {
-        if (isNumber(arg1) && isNumber(arg2)) {
-            int res = getRes(op, arg1, arg2);
+        if (Calculate.isNumber(arg1) && Calculate.isNumber(arg2)) {
+            int res = Calculate.getRes(op, arg1, arg2);
             textSection.append("li $t0, ").append(res).append("\n");
             store(result, "$t0");
         } else {
@@ -236,42 +232,6 @@ public class MipsGenerator {
             }
             store(result, "$t0");
         }
-    }
-
-    private int getRes(String op, String arg1, String arg2) {
-        int val1 = Integer.parseInt(arg1);
-        int val2 = Integer.parseInt(arg2);
-        return switch (op) {
-            case "addu" -> val1 + val2;
-            case "subu" -> val1 - val2;
-            case "mulu" -> val1 * val2;
-            case "div" -> val1 / val2;
-            case "mod" -> val1 % val2;
-            case "slt" -> (val1 < val2) ? 1 : 0;
-            case "sgt" -> (val1 > val2) ? 1 : 0;
-            case "sle" -> (val1 <= val2) ? 1 : 0;
-            case "sge" -> (val1 >= val2) ? 1 : 0;
-            case "seq" -> (val1 == val2) ? 1 : 0;
-            case "sne" -> (val1 != val2) ? 1 : 0;
-            default -> 0;
-        };
-    }
-
-    private String mips(String op) {
-        return switch (op) {
-            case "add" -> "addu";
-            case "sub" -> "subu";
-            case "mul" -> "mulu";
-            case "div" -> "div";
-            case "mod" -> "mod";
-            case "lt" -> "slt";
-            case "gt" -> "sgt";
-            case "leq" -> "sle";
-            case "geq" -> "sge";
-            case "eq" -> "seq";
-            case "neq" -> "sne";
-            default -> null;
-        };
     }
 
     private void generateArrayStore(String value, String index, String arrayName) {
@@ -311,13 +271,5 @@ public class MipsGenerator {
         if (!result.equals("_")) {
             store(result, "$v0");
         }
-    }
-
-    private boolean isNumber(String str) {
-        return str.matches("^-?[0-9]+$");
-    }
-
-    private String replace(String str) {
-        return str.replace("\"", "\\\"");
     }
 }

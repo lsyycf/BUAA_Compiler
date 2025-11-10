@@ -161,66 +161,74 @@ public class Stmt {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        if (stmtType == StmtType.LVal) {
-            sb.append(lVal).append("\n");
-            sb.append(TokenType.ASSIGN).append(" =\n");
-            sb.append(expLVal).append("\n");
-            sb.append(TokenType.SEMICN).append(" ;\n");
-        } else if (stmtType == StmtType.Exp) {
-            if (exp != null) {
-                sb.append(exp).append("\n");
+        switch (stmtType) {
+            case Block -> sb.append(block).append("\n");
+            case Exp -> {
+                if (exp != null) {
+                    sb.append(exp).append("\n");
+                }
+                sb.append(TokenType.SEMICN).append(" ;\n");
             }
-            sb.append(TokenType.SEMICN).append(" ;\n");
-        } else if (stmtType == StmtType.Block) {
-            sb.append(block).append("\n");
-        } else if (stmtType == StmtType.If) {
-            sb.append(TokenType.IFTK).append(" if\n");
-            sb.append(TokenType.LPARENT).append(" (\n");
-            sb.append(condIf).append("\n");
-            sb.append(TokenType.RPARENT).append(" )\n");
-            sb.append(stmtIf).append("\n");
-            if (stmtElse != null) {
-                sb.append(TokenType.ELSETK).append(" else\n");
-                sb.append(stmtElse).append("\n");
+            case If -> {
+                sb.append(TokenType.IFTK).append(" if\n");
+                sb.append(TokenType.LPARENT).append(" (\n");
+                sb.append(condIf).append("\n");
+                sb.append(TokenType.RPARENT).append(" )\n");
+                sb.append(stmtIf).append("\n");
+                if (stmtElse != null) {
+                    sb.append(TokenType.ELSETK).append(" else\n");
+                    sb.append(stmtElse).append("\n");
+                }
             }
-        } else if (stmtType == StmtType.For) {
-            sb.append(TokenType.FORTK).append(" for\n");
-            sb.append(TokenType.LPARENT).append(" (\n");
-            if (forStmtLeft != null) {
-                sb.append(forStmtLeft).append("\n");
+            case For -> {
+                sb.append(TokenType.FORTK).append(" for\n");
+                sb.append(TokenType.LPARENT).append(" (\n");
+                if (forStmtLeft != null) {
+                    sb.append(forStmtLeft).append("\n");
+                }
+                sb.append(TokenType.SEMICN).append(" ;\n");
+                if (condFor != null) {
+                    sb.append(condFor).append("\n");
+                }
+                sb.append(TokenType.SEMICN).append(" ;\n");
+                if (forStmtRight != null) {
+                    sb.append(forStmtRight).append("\n");
+                }
+                sb.append(TokenType.RPARENT).append(" )\n");
+                sb.append(stmtFor).append("\n");
             }
-            sb.append(TokenType.SEMICN).append(" ;\n");
-            if (condFor != null) {
-                sb.append(condFor).append("\n");
+            case LVal -> {
+                sb.append(lVal).append("\n");
+                sb.append(TokenType.ASSIGN).append(" =\n");
+                sb.append(expLVal).append("\n");
+                sb.append(TokenType.SEMICN).append(" ;\n");
             }
-            sb.append(TokenType.SEMICN).append(" ;\n");
-            if (forStmtRight != null) {
-                sb.append(forStmtRight).append("\n");
+            case Break -> {
+                sb.append(TokenType.BREAKTK).append(" break\n");
+                sb.append(TokenType.SEMICN).append(" ;\n");
             }
-            sb.append(TokenType.RPARENT).append(" )\n");
-            sb.append(stmtFor).append("\n");
-        } else if (stmtType == StmtType.Break) {
-            sb.append(TokenType.BREAKTK).append(" break\n");
-            sb.append(TokenType.SEMICN).append(" ;\n");
-        } else if (stmtType == StmtType.Continue) {
-            sb.append(TokenType.CONTINUETK).append(" continue\n");
-            sb.append(TokenType.SEMICN).append(" ;\n");
-        } else if (stmtType == StmtType.Return) {
-            sb.append(TokenType.RETURNTK).append(" return\n");
-            if (expReturn != null) {
-                sb.append(expReturn).append("\n");
+            case Continue -> {
+                sb.append(TokenType.CONTINUETK).append(" continue\n");
+                sb.append(TokenType.SEMICN).append(" ;\n");
             }
-            sb.append(TokenType.SEMICN).append(" ;\n");
-        } else {
-            sb.append(TokenType.PRINTFTK).append(" printf\n");
-            sb.append(TokenType.LPARENT).append(" (\n");
-            sb.append(TokenType.STRCON).append(" \"").append(strCon).append("\"\n");
-            for (Exp exp : expPrint) {
-                sb.append(TokenType.COMMA).append(" ,\n");
-                sb.append(exp).append("\n");
+            case Print -> {
+                sb.append(TokenType.PRINTFTK).append(" printf\n");
+                sb.append(TokenType.LPARENT).append(" (\n");
+                sb.append(TokenType.STRCON).append(" \"").append(strCon).append("\"\n");
+                for (Exp exp : expPrint) {
+                    sb.append(TokenType.COMMA).append(" ,\n");
+                    sb.append(exp).append("\n");
+                }
+                sb.append(TokenType.RPARENT).append(" )\n");
+                sb.append(TokenType.SEMICN).append(" ;\n");
             }
-            sb.append(TokenType.RPARENT).append(" )\n");
-            sb.append(TokenType.SEMICN).append(" ;\n");
+            case Return -> {
+                sb.append(TokenType.RETURNTK).append(" return\n");
+                if (expReturn != null) {
+                    sb.append(expReturn).append("\n");
+                }
+                sb.append(TokenType.SEMICN).append(" ;\n");
+            }
         }
         sb.append("<Stmt>");
         return sb.toString();

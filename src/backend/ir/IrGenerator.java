@@ -1,6 +1,7 @@
 package backend.ir;
 
 import backend.data.*;
+import backend.utils.*;
 import frontend.config.*;
 import frontend.data.*;
 import frontend.element.*;
@@ -26,6 +27,10 @@ public class IrGenerator {
     public IrGenerator(CompUnit compUnit, SymbolTree symbolTree) {
         this.compUnit = compUnit;
         this.symbolTree = symbolTree;
+    }
+
+    private static String getIrName(String idenfr, int useLine, SymbolTree node) {
+        return "ir_idenfr_" + idenfr + "_" + node.findSymbolRecursive(idenfr, useLine).getScopeId();
     }
 
     private String newTemp() {
@@ -97,9 +102,9 @@ public class IrGenerator {
         isStatic = (type == SymbolType.StaticInt || type == SymbolType.StaticIntArray);
         if (def.getConstExp() != null) {
             int size = Visitor.evaConstExp(def.getConstExp(), node);
-            addQuad("array_alloc", name, String.valueOf(size), getFlag());
+            addQuad("array_alloc", name, String.valueOf(size), isStatic ? "static" : "int");
         } else {
-            addQuad("alloc", name, null, getFlag());
+            addQuad("alloc", name, null, isStatic ? "static" : "int");
         }
         return name;
     }
@@ -175,11 +180,11 @@ public class IrGenerator {
 
     // MainFuncDef → <INTTK> <MAINTK> <LPARENT> <RPARENT> Block
     private void generateMainFuncDef(MainFuncDef mainFuncDef) {
-        addQuad("main", null, null, null);
+        addQuad("func_begin", "main", null, null);
         scopeIndex++;
         SymbolTree mainNode = symbolTree.getScope(scopeIndex);
         generateBlock(mainFuncDef.block(), mainNode);
-        addQuad("exit", null, null, null);
+        addQuad("func_end", null, null, null);
     }
 
     // FuncType → <VOIDTK> | <INTTK>
@@ -229,37 +234,39 @@ public class IrGenerator {
     // | <RETURNTK> [Exp] <SEMICN>
     // | <PRINTFTK> <LPARENT> <STRCON> { <COMMA> Exp } <RPARENT> <SEMICN>
     private void generateStmt(Stmt stmt, SymbolTree node) {
-        if (stmt.getStmtType() == Stmt.StmtType.LVal) {
-            generateLvalStmt(stmt, node);
-        } else if (stmt.getStmtType() == Stmt.StmtType.Exp) {
-            if (stmt.getExp() != null) {
-                generateExp(stmt.getExp(), node);
+        switch (stmt.getStmtType()) {
+            case LVal -> generateLvalStmt(stmt, node);
+            case Exp -> {
+                if (stmt.getExp() != null) {
+                    generateExp(stmt.getExp(), node);
+                }
             }
-        } else if (stmt.getStmtType() == Stmt.StmtType.Block) {
-            scopeIndex++;
-            SymbolTree blockNode = symbolTree.getScope(scopeIndex);
-            generateBlock(stmt.getBlock(), blockNode);
-        } else if (stmt.getStmtType() == Stmt.StmtType.If) {
-            generateIfStmt(stmt, node);
-        } else if (stmt.getStmtType() == Stmt.StmtType.For) {
-            generateForStmtPart(stmt, node);
-        } else if (stmt.getStmtType() == Stmt.StmtType.Break) {
-            if (!breakLabels.isEmpty()) {
-                addQuad("j", null, null, breakLabels.peek());
+            case Block -> {
+                scopeIndex++;
+                SymbolTree blockNode = symbolTree.getScope(scopeIndex);
+                generateBlock(stmt.getBlock(), blockNode);
             }
-        } else if (stmt.getStmtType() == Stmt.StmtType.Continue) {
-            if (!continueLabels.isEmpty()) {
-                addQuad("j", null, null, continueLabels.peek());
+            case If -> generateIfStmt(stmt, node);
+            case For -> generateForStmtPart(stmt, node);
+            case Break -> {
+                if (!breakLabels.isEmpty()) {
+                    addQuad("j", null, null, breakLabels.peek());
+                }
             }
-        } else if (stmt.getStmtType() == Stmt.StmtType.Return) {
-            if (stmt.getExpReturn() != null) {
-                String value = generateExp(stmt.getExpReturn(), node);
-                addQuad("ret", value, null, null);
-            } else {
-                addQuad("ret", null, null, null);
+            case Continue -> {
+                if (!continueLabels.isEmpty()) {
+                    addQuad("j", null, null, continueLabels.peek());
+                }
             }
-        } else if (stmt.getStmtType() == Stmt.StmtType.Print) {
-            generatePrintfStmt(stmt, node);
+            case Return -> {
+                if (stmt.getExpReturn() != null) {
+                    String value = generateExp(stmt.getExpReturn(), node);
+                    addQuad("ret", value, null, null);
+                } else {
+                    addQuad("ret", null, null, null);
+                }
+            }
+            case Print -> generatePrintfStmt(stmt, node);
         }
     }
 
@@ -385,13 +392,11 @@ public class IrGenerator {
 
     // PrimaryExp → <LPARENT> Exp <RPARENT> | LVal | Number
     private String generatePrimaryExp(PrimaryExp primaryExp, SymbolTree node) {
-        if (primaryExp.getPrimaryExpType() == PrimaryExp.PrimaryExpType.Exp) {
-            return generateExp(primaryExp.getExp(), node);
-        } else if (primaryExp.getPrimaryExpType() == PrimaryExp.PrimaryExpType.LVal) {
-            return generateLVal(primaryExp.getLval(), node);
-        } else {
-            return generateNumber(primaryExp.getNumber());
-        }
+        return switch (primaryExp.getPrimaryExpType()) {
+            case Exp -> generateExp(primaryExp.getExp(), node);
+            case LVal -> generateLVal(primaryExp.getLval(), node);
+            case Number -> generateNumber(primaryExp.getNumber());
+        };
     }
 
     // Number → <INTCON>
@@ -399,16 +404,13 @@ public class IrGenerator {
         return number.number();
     }
 
-    // UnaryExp → PrimaryExp | <IDENFR> <LPARENT> [FuncRParams] <RPARENT> | UnaryOp
-    // UnaryExp
+    // UnaryExp → PrimaryExp | <IDENFR> <LPARENT> [FuncRParams] <RPARENT> | UnaryOp UnaryExp
     private String generateUnaryExp(UnaryExp unaryExp, SymbolTree node) {
-        if (unaryExp.getUnaryExpType() == UnaryExp.UnaryExpType.PrimaryExp) {
-            return generatePrimaryExp(unaryExp.getPrimaryExp(), node);
-        } else if (unaryExp.getUnaryExpType() == UnaryExp.UnaryExpType.FuncRParams) {
-            return generateFuncCall(unaryExp, node);
-        } else {
-            return generateUnaryOp(unaryExp, node);
-        }
+        return switch (unaryExp.getUnaryExpType()) {
+            case PrimaryExp -> generatePrimaryExp(unaryExp.getPrimaryExp(), node);
+            case FuncRParams -> generateFuncCall(unaryExp, node);
+            case UnaryOp -> generateUnaryOp(unaryExp, node);
+        };
     }
 
     // <IDENFR> <LPARENT> [FuncRParams] <RPARENT>
@@ -433,27 +435,22 @@ public class IrGenerator {
     private String generateUnaryOp(UnaryExp unaryExp, SymbolTree node) {
         String operand = generateUnaryExp(unaryExp.getUnaryExp(), node);
         UnaryOp.UnaryOpType opType = unaryExp.getUnaryOp().unaryOpType();
-        if (opType == UnaryOp.UnaryOpType.Plus) {
-            return operand;
-        } else if (opType == UnaryOp.UnaryOpType.Minu) {
-            String temp = newTemp();
-            if (isNumber(operand)) {
-                int res = getRes("sub", "0", operand);
-                addQuad("assign", String.valueOf(res), null, temp);
-            } else {
-                addQuad("sub", "0", operand, temp);
-            }
-            return temp;
+        return switch (opType) {
+            case Plus -> operand;
+            case Minu -> generateSingle("subu", operand);
+            case Not -> generateSingle("seq", operand);
+        };
+    }
+
+    private String generateSingle(String op, String operand) {
+        String temp = newTemp();
+        if (Calculate.isNumber(operand)) {
+            int res = Calculate.getRes(op, "0", operand);
+            addQuad("assign", String.valueOf(res), null, temp);
         } else {
-            String temp = newTemp();
-            if (isNumber(operand)) {
-                int res = getRes("eq", "0", operand);
-                addQuad("assign", String.valueOf(res), null, temp);
-            } else {
-                addQuad("eq", "0", operand, temp);
-            }
-            return temp;
+            addQuad(op, "0", operand, temp);
         }
+        return temp;
     }
 
     // FuncRParams → Exp { <COMMA> Exp }
@@ -461,8 +458,7 @@ public class IrGenerator {
         for (Exp exp : funcRParams.getExp()) {
             String value = generateExp(exp, node);
             SymbolType symbolType = Visitor.getExpType(exp, node);
-            String type = (symbolType == SymbolType.IntFunc || symbolType == SymbolType.Int
-                    || symbolType == SymbolType.StaticInt || symbolType == SymbolType.ConstInt) ? "int" : "array";
+            String type = (symbolType == SymbolType.IntFunc || symbolType == SymbolType.Int || symbolType == SymbolType.StaticInt || symbolType == SymbolType.ConstInt) ? "int" : "array";
             addQuad("param", value, type, null);
         }
     }
@@ -474,24 +470,25 @@ public class IrGenerator {
         String result = generateUnaryExp(unaryExps.get(0), node);
         for (int i = 1; i < unaryExps.size(); i++) {
             String right = generateUnaryExp(unaryExps.get(i), node);
-            String temp = newTemp();
-            String op;
-            if (ops.get(i - 1) == MulExp.MulExpType.Mult) {
-                op = "mul";
-            } else if (ops.get(i - 1) == MulExp.MulExpType.Div) {
-                op = "div";
-            } else {
-                op = "mod";
-            }
-            if (isNumber(right) && isNumber(result)) {
-                int res = getRes(op, result, right);
-                addQuad("assign", String.valueOf(res), null, temp);
-            } else {
-                addQuad(op, result, right, temp);
-            }
-            result = temp;
+            String op = switch (ops.get(i - 1)) {
+                case Mult -> "mulu";
+                case Div -> "div";
+                case Mod -> "mod";
+            };
+            result = generateCalculate(right, result, op);
         }
         return result;
+    }
+
+    private String generateCalculate(String right, String result, String op) {
+        String temp = newTemp();
+        if (Calculate.isNumber(right) && Calculate.isNumber(result)) {
+            int res = Calculate.getRes(op, result, right);
+            addQuad("assign", String.valueOf(res), null, temp);
+        } else {
+            addQuad(op, result, right, temp);
+        }
+        return temp;
     }
 
     // AddExp → MulExp { ( <PLUS> | <MINU> ) MulExp }
@@ -501,20 +498,8 @@ public class IrGenerator {
         String result = generateMulExp(mulExps.get(0), node);
         for (int i = 1; i < mulExps.size(); i++) {
             String right = generateMulExp(mulExps.get(i), node);
-            String temp = newTemp();
-            String op;
-            if (ops.get(i - 1) == AddExp.AddExpType.Plus) {
-                op = "add";
-            } else {
-                op = "sub";
-            }
-            if (isNumber(right) && isNumber(result)) {
-                int res = getRes(op, result, right);
-                addQuad("assign", String.valueOf(res), null, temp);
-            } else {
-                addQuad(op, result, right, temp);
-            }
-            result = temp;
+            String op = ops.get(i - 1) == AddExp.AddExpType.Plus ? "addu" : "subu";
+            result = generateCalculate(right, result, op);
         }
         return result;
     }
@@ -526,24 +511,13 @@ public class IrGenerator {
         String result = generateAddExp(addExps.get(0), node);
         for (int i = 1; i < addExps.size(); i++) {
             String right = generateAddExp(addExps.get(i), node);
-            String temp = newTemp();
-            String op;
-            if (ops.get(i - 1) == RelExp.RelExpType.Lss) {
-                op = "lt";
-            } else if (ops.get(i - 1) == RelExp.RelExpType.Gre) {
-                op = "gt";
-            } else if (ops.get(i - 1) == RelExp.RelExpType.Leq) {
-                op = "leq";
-            } else {
-                op = "geq";
-            }
-            if (isNumber(right) && isNumber(result)) {
-                int res = getRes(op, result, right);
-                addQuad("assign", String.valueOf(res), null, temp);
-            } else {
-                addQuad(op, result, right, temp);
-            }
-            result = temp;
+            String op = switch (ops.get(i - 1)) {
+                case Lss -> "slt";
+                case Gre -> "sgt";
+                case Leq -> "sle";
+                case Geq -> "sge";
+            };
+            result = generateCalculate(right, result, op);
         }
         return result;
     }
@@ -555,20 +529,8 @@ public class IrGenerator {
         String result = generateRelExp(relExps.get(0), node);
         for (int i = 1; i < relExps.size(); i++) {
             String right = generateRelExp(relExps.get(i), node);
-            String temp = newTemp();
-            String op;
-            if (ops.get(i - 1) == EqExp.EqExpType.Eql) {
-                op = "eq";
-            } else {
-                op = "neq";
-            }
-            if (isNumber(right) && isNumber(result)) {
-                int res = getRes(op, result, right);
-                addQuad("assign", String.valueOf(res), null, temp);
-            } else {
-                addQuad(op, result, right, temp);
-            }
-            result = temp;
+            String op = ops.get(i - 1) == EqExp.EqExpType.Eql ? "seq" : "sne";
+            result = generateCalculate(right, result, op);
         }
         return result;
     }
@@ -596,36 +558,5 @@ public class IrGenerator {
                 generateLAndExp(lAndExp, labelTrue, labelFalse, node);
             }
         }
-    }
-
-    private String getFlag() {
-        return isStatic ? "static" : "int";
-    }
-
-    private String getIrName(String idenfr, int useLine, SymbolTree node) {
-        return "ir_idenfr_" + idenfr + "_" + node.findSymbolRecursive(idenfr, useLine).getScopeId();
-    }
-
-    private int getRes(String op, String arg1, String arg2) {
-        int val1 = Integer.parseInt(arg1);
-        int val2 = Integer.parseInt(arg2);
-        return switch (op) {
-            case "add" -> val1 + val2;
-            case "sub" -> val1 - val2;
-            case "mul" -> val1 * val2;
-            case "div" -> val1 / val2;
-            case "mod" -> val1 % val2;
-            case "lt" -> (val1 < val2) ? 1 : 0;
-            case "gt" -> (val1 > val2) ? 1 : 0;
-            case "leq" -> (val1 <= val2) ? 1 : 0;
-            case "geq" -> (val1 >= val2) ? 1 : 0;
-            case "eq" -> (val1 == val2) ? 1 : 0;
-            case "neq" -> (val1 != val2) ? 1 : 0;
-            default -> 0;
-        };
-    }
-
-    private boolean isNumber(String str) {
-        return str.matches("^-?[0-9]+$");
     }
 }
