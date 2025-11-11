@@ -27,15 +27,15 @@ public class Lexer {
     }
 
     private boolean isComment() {
-        if ("//".equals(this.reader.peekStr(2))) {
+        if (this.reader.peekStr(2).equals("//")) {
             this.reader.nextLine();
             return true;
-        } else if ("/*".equals(this.reader.peekStr(2))) {
+        } else if (this.reader.peekStr(2).equals("/*")) {
             reader.consume(2);
-            while (!this.reader.endOfFile() && !"*/".equals(this.reader.peekStr(2))) {
+            while (!this.reader.endOfFile() && !this.reader.peekStr(2).equals("*/")) {
                 this.reader.consume(1);
             }
-            if ("*/".equals(this.reader.peekStr(2))) {
+            if (this.reader.peekStr(2).equals("*/")) {
                 this.reader.consume(2);
                 return true;
             }

@@ -481,14 +481,52 @@ public class IrGenerator {
     }
 
     private String generateCalculate(String right, String result, String op) {
-        String temp = newTemp();
         if (Calculate.isNumber(right) && Calculate.isNumber(result)) {
+            String temp = newTemp();
             int res = Calculate.getRes(op, result, right);
             addQuad("assign", String.valueOf(res), null, temp);
+            return temp;
+        } else if (op.equals("mulu")) {
+            return generateMul(right, result);
         } else {
+            String temp = newTemp();
             addQuad(op, result, right, temp);
+            return temp;
+        }
+    }
+
+    private String generateMul(String right, String result) {
+        String s = generateConst(right, result);
+        if (s != null) {
+            return s;
+        }
+        s = generateConst(result, right);
+        if (s != null) {
+            return s;
+        }
+        String temp = newTemp();
+        int l = Calculate.getPower(result);
+        int r = Calculate.getPower(right);
+        if (r != -1) {
+            addQuad("sllv", result, String.valueOf(r), temp);
+        } else if (l != -1) {
+            addQuad("sllv", right, String.valueOf(l), temp);
+        } else {
+            addQuad("mulu", result, right, temp);
         }
         return temp;
+    }
+
+    private String generateConst(String result, String other) {
+        if (Calculate.isNumber(result)) {
+            int num = Integer.parseInt(result);
+            if (num == 1) {
+                return other;
+            } else if (num == 0) {
+                return "0";
+            }
+        }
+        return null;
     }
 
     // AddExp → MulExp { ( <PLUS> | <MINU> ) MulExp }
