@@ -17,6 +17,7 @@ public class IrGenerator {
     private final IrList globalList = new IrList();
     private final Stack<String> breakLabels = new Stack<>();
     private final Stack<String> continueLabels = new Stack<>();
+    private final HashMap<String, String> stringPool = new HashMap<>();
     private int tempCounter = 1;
     private int labelCounter = 1;
     private int stringCounter = 1;
@@ -362,7 +363,8 @@ public class IrGenerator {
                 addQuad("printf", values.get(j), null, null);
                 j++;
             } else if (!part.isEmpty()) {
-                String str = newString();
+                String str = stringPool.containsKey(part) ? stringPool.get(part) : newString();
+                stringPool.put(part, str);
                 addQuad("print", part, null, str);
             }
         }
