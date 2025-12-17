@@ -1,7 +1,6 @@
 package backend.ir;
 
 import backend.data.*;
-import backend.utils.*;
 import frontend.config.*;
 import frontend.data.*;
 import frontend.element.*;
@@ -437,21 +436,16 @@ public class IrGenerator {
     private String generateUnaryOp(UnaryExp unaryExp, SymbolTree node) {
         String operand = generateUnaryExp(unaryExp.getUnaryExp(), node);
         UnaryOp.UnaryOpType opType = unaryExp.getUnaryOp().unaryOpType();
-        return switch (opType) {
-            case Plus -> operand;
-            case Minu -> generateSingle("subu", operand);
-            case Not -> generateSingle("seq", operand);
+        String op = switch (opType) {
+            case Plus -> null;
+            case Minu -> "subu";
+            case Not -> "seq";
         };
-    }
-
-    private String generateSingle(String op, String operand) {
-        String temp = newTemp();
-        if (Calculate.isNumber(operand)) {
-            int res = Calculate.getRes(op, "0", operand);
-            addQuad("assign", String.valueOf(res), null, temp);
-        } else {
-            addQuad(op, "0", operand, temp);
+        if (op == null) {
+            return operand;
         }
+        String temp = newTemp();
+        addQuad(op, "0", operand, temp);
         return temp;
     }
 
@@ -477,58 +471,11 @@ public class IrGenerator {
                 case Div -> "div";
                 case Mod -> "mod";
             };
-            result = generateCalculate(right, result, op);
-        }
-        return result;
-    }
-
-    private String generateCalculate(String right, String result, String op) {
-        if (Calculate.isNumber(right) && Calculate.isNumber(result)) {
-            String temp = newTemp();
-            int res = Calculate.getRes(op, result, right);
-            addQuad("assign", String.valueOf(res), null, temp);
-            return temp;
-        } else if (op.equals("mulu")) {
-            return generateMul(right, result);
-        } else {
             String temp = newTemp();
             addQuad(op, result, right, temp);
-            return temp;
+            result = temp;
         }
-    }
-
-    private String generateMul(String right, String result) {
-        String s = generateConst(right, result);
-        if (s != null) {
-            return s;
-        }
-        s = generateConst(result, right);
-        if (s != null) {
-            return s;
-        }
-        String temp = newTemp();
-        int l = Calculate.getPower(result);
-        int r = Calculate.getPower(right);
-        if (r != -1) {
-            addQuad("sllv", result, String.valueOf(r), temp);
-        } else if (l != -1) {
-            addQuad("sllv", right, String.valueOf(l), temp);
-        } else {
-            addQuad("mulu", result, right, temp);
-        }
-        return temp;
-    }
-
-    private String generateConst(String result, String other) {
-        if (Calculate.isNumber(result)) {
-            int num = Integer.parseInt(result);
-            if (num == 1) {
-                return other;
-            } else if (num == 0) {
-                return "0";
-            }
-        }
-        return null;
+        return result;
     }
 
     // AddExp → MulExp { ( <PLUS> | <MINU> ) MulExp }
@@ -539,7 +486,9 @@ public class IrGenerator {
         for (int i = 1; i < mulExps.size(); i++) {
             String right = generateMulExp(mulExps.get(i), node);
             String op = ops.get(i - 1) == AddExp.AddExpType.Plus ? "addu" : "subu";
-            result = generateCalculate(right, result, op);
+            String temp = newTemp();
+            addQuad(op, result, right, temp);
+            result = temp;
         }
         return result;
     }
@@ -557,7 +506,9 @@ public class IrGenerator {
                 case Leq -> "sle";
                 case Geq -> "sge";
             };
-            result = generateCalculate(right, result, op);
+            String temp = newTemp();
+            addQuad(op, result, right, temp);
+            result = temp;
         }
         return result;
     }
@@ -570,7 +521,9 @@ public class IrGenerator {
         for (int i = 1; i < relExps.size(); i++) {
             String right = generateRelExp(relExps.get(i), node);
             String op = ops.get(i - 1) == EqExp.EqExpType.Eql ? "seq" : "sne";
-            result = generateCalculate(right, result, op);
+            String temp = newTemp();
+            addQuad(op, result, right, temp);
+            result = temp;
         }
         return result;
     }

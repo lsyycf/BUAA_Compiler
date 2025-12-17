@@ -7,6 +7,7 @@ import frontend.lexer.*;
 import frontend.parser.*;
 import frontend.symbol.*;
 import frontend.utils.*;
+import optimize.*;
 
 import java.io.*;
 import java.util.*;
@@ -14,6 +15,7 @@ import java.util.*;
 public class Compiler {
     private static final ErrorList errorList = new ErrorList();
     private static final Version version = Version.code;
+    private static final boolean optimize = true;
 
     public static void main(String[] args) throws IOException {
         ArrayList<String> lines = FileIO.readlines("testfile.txt");
@@ -34,6 +36,10 @@ public class Compiler {
                 if (version == Version.code && !errorList.isFatal()) {
                     IrGenerator irGenerator = new IrGenerator(compUnit, symbolTree);
                     IrList irList = irGenerator.generateCompUnit();
+                    if (optimize) {
+                        Optimize optimize = new Optimize(irList);
+                        irList = optimize.optimize();
+                    }
                     FileIO.writefile("ir.txt", irList.toString());
                     MipsGenerator mipsGenerator = new MipsGenerator(irList);
                     String mipsCode = mipsGenerator.generate();

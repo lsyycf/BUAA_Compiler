@@ -235,11 +235,7 @@ public class MipsGenerator {
     }
 
     private void generateBinaryOp(String op, String arg1, String arg2, String result) {
-        if (Calculate.isNumber(arg1) && Calculate.isNumber(arg2)) {
-            int res = Calculate.getRes(op, arg1, arg2);
-            textSection.append("li $t0, ").append(res).append("\n");
-            store(result, "$t0");
-        } else if (!immediate(op, arg1, arg2, result)) {
+        if (!immediate(op, arg1, arg2, result)) {
             load(arg1, "$t0");
             load(arg2, "$t1");
             if (op.equals("mod")) {
