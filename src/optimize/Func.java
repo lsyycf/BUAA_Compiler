@@ -319,9 +319,7 @@ public class Func {
         return false;
     }
 
-    private void insertPreHeaderAndMove(Block header, HashSet<Block> loopBody,
-                                        ArrayList<Quadruple> invariants,
-                                        HashMap<Quadruple, Block> quadToBlock) {
+    private void insertPreHeaderAndMove(Block header, HashSet<Block> loopBody, ArrayList<Quadruple> invariants, HashMap<Quadruple, Block> quadToBlock) {
         String preHeaderLabel = "licm_pre_" + (licmLabelCounter++);
         IrList preIr = new IrList();
         preIr.add(new Quadruple("label", "_", "_", preHeaderLabel));
@@ -485,8 +483,7 @@ public class Func {
                 Quadruple newQ = new Quadruple(op, newArg1, newArg2, res);
 
                 if (op.equals("beq")) {
-                    if (newArg1 != null && newArg2 != null &&
-                            Calculate.isNumber(newArg1) && Calculate.isNumber(newArg2)) {
+                    if (newArg1 != null && newArg2 != null && Calculate.isNumber(newArg1) && Calculate.isNumber(newArg2)) {
                         if (Integer.parseInt(newArg1) == Integer.parseInt(newArg2)) {
                             newIr.add(new Quadruple("j", "_", "_", res));
                         }
@@ -708,8 +705,7 @@ public class Func {
                         }
                     }
                     case "mulu" -> {
-                        if ((Calculate.isNumber(arg1) && Integer.parseInt(arg1) == 0) ||
-                                (Calculate.isNumber(arg2) && Integer.parseInt(arg2) == 0)) {
+                        if ((Calculate.isNumber(arg1) && Integer.parseInt(arg1) == 0) || (Calculate.isNumber(arg2) && Integer.parseInt(arg2) == 0)) {
                             newIr.add(new Quadruple("assign", "0", "_", result));
                             processed = true;
                         } else if (Calculate.isNumber(arg1) && Integer.parseInt(arg1) == 1) {

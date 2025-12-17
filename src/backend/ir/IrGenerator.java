@@ -131,8 +131,7 @@ public class IrGenerator {
         }
     }
 
-    // VarDef → <IDENFR> [ <LBRACK> ConstExp <RBRACK> ] | <IDENFR> [ <LBRACK>
-    // ConstExp <RBRACK> ] <ASSIGN> InitVal
+    // VarDef → <IDENFR> [ <LBRACK> ConstExp <RBRACK> ] | <IDENFR> [ <LBRACK> ConstExp <RBRACK> ] <ASSIGN> InitVal
     private void generateVarDef(VarDef varDef, SymbolTree node) {
         String name = generateIndex(varDef, node);
         if (varDef.getVatDefType() == VarDef.VatDefType.Assign) {
@@ -227,8 +226,7 @@ public class IrGenerator {
     // | [Exp] <SEMICN>
     // | Block
     // | <IFTK> <LPARENT> Cond <RPARENT> Stmt [ <ELSETK> Stmt ]
-    // | <FORTK> <LPARENT> [ForStmt] <SEMICN> [Cond] <SEMICN> [ForStmt] <RPARENT>
-    // Stmt
+    // | <FORTK> <LPARENT> [ForStmt] <SEMICN> [Cond] <SEMICN> [ForStmt] <RPARENT> Stmt
     // | <BREAKTK> <SEMICN>
     // | <CONTINUETK> <SEMICN>
     // | <RETURNTK> [Exp] <SEMICN>

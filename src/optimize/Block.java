@@ -148,11 +148,7 @@ public class Block {
                         }
                     }
                 }
-                boolean definesResult = result != null && !result.equals("_")
-                        && !op.equals("store") && !op.equals("beq") && !op.equals("j")
-                        && !op.equals("label") && !op.startsWith("func") && !op.startsWith("array")
-                        && !op.equals("alloc") && !op.startsWith("print") && !op.equals("param")
-                        && !op.equals("ret");
+                boolean definesResult = result != null && !result.equals("_") && !op.equals("store") && !op.equals("beq") && !op.equals("j") && !op.equals("label") && !op.startsWith("func") && !op.startsWith("array") && !op.equals("alloc") && !op.startsWith("print") && !op.equals("param") && !op.equals("ret");
 
                 if (definesResult) {
                     DAGNode leaf = new DAGNode("leaf", null, null, null);

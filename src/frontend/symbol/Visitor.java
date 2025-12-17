@@ -262,8 +262,7 @@ public class Visitor {
         if (funcDef.getFuncFParams() != null) {
             visitFuncFParams(funcDef.getFuncFParams(), node);
             for (FuncFParam param : funcDef.getFuncFParams().getFuncFParam()) {
-                SymbolType paraType = param.getFuncFParamType() == FuncFParam.FuncFParamType.Array ? SymbolType.IntArray
-                        : SymbolType.Int;
+                SymbolType paraType = param.getFuncFParamType() == FuncFParam.FuncFParamType.Array ? SymbolType.IntArray : SymbolType.Int;
                 symbol.addParamType(paraType);
             }
         }
@@ -328,8 +327,7 @@ public class Visitor {
     // | [Exp] <SEMICN>
     // | Block
     // | <IFTK> <LPARENT> Cond <RPARENT> Stmt [ <ELSETK> Stmt ]
-    // | <FORTK> <LPARENT> [ForStmt] <SEMICN> [Cond] <SEMICN> [ForStmt] <RPARENT>
-    // Stmt
+    // | <FORTK> <LPARENT> [ForStmt] <SEMICN> [Cond] <SEMICN> [ForStmt] <RPARENT> Stmt
     // | <BREAKTK> <SEMICN>
     // | <CONTINUETK> <SEMICN>
     // | <RETURNTK> [Exp] <SEMICN>
@@ -415,8 +413,7 @@ public class Visitor {
         for (LVal lVal : forStmt.getlVal()) {
             String idenfr = lVal.getIdenfr();
             SymbolMap symbolMap = node.findSymbolRecursive(idenfr, -1);
-            if (symbolMap != null && (symbolMap.getSymbol(idenfr).getType() == SymbolType.ConstInt
-                    || symbolMap.getSymbol(idenfr).getType() == SymbolType.ConstIntArray)) {
+            if (symbolMap != null && (symbolMap.getSymbol(idenfr).getType() == SymbolType.ConstInt || symbolMap.getSymbol(idenfr).getType() == SymbolType.ConstIntArray)) {
                 errorList.addError(lVal.getLineIndex(), ErrorType.CONSTANT_MODIFICATION);
             }
         }
