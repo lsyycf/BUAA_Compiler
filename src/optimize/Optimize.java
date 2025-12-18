@@ -22,10 +22,14 @@ public class Optimize {
                 func.splitBlock();
                 func.buildGraph();
                 func.removeDeadBlocks();
-                func.lcse();
-                func.loopInvariantCodeMotion();
-                func.strengthReduction();
                 func.globalConstantPropagation();
+                func.deadCodeElimination();
+                func.lcse();
+                func.deadCodeElimination();
+                func.loopInvariantCodeMotion();
+                func.deadCodeElimination();
+                func.strengthReduction();
+                func.deadCodeElimination();
                 func.peephole();
                 func.deadCodeElimination();
             }
