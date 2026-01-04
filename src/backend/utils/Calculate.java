@@ -45,4 +45,16 @@ public class Calculate {
     public static boolean canSwap(String op) {
         return op.equals("addu") || op.equals("seq") || op.equals("mulu") || op.equals("sne") || op.equals("and");
     }
+
+    public static String change(String op) {
+        return switch (op) {
+            case "sllv" -> "sll";
+            case "srav" -> "sra";
+            case "srlv" -> "srl";
+            case "and" -> "andi";
+            case "slt" -> "slti";
+            case "mod" -> null;
+            default -> op;
+        };
+    }
 }
