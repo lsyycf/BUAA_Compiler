@@ -21,7 +21,6 @@ public class ConstDecl {
 
     @Override
     public String toString() {
-        return TokenType.CONSTTK + " const\n" + bType + "\n" + ToString.formatComma(constDef) + TokenType.SEMICN
-                + " ;\n" + "<ConstDecl>";
+        return TokenType.CONSTTK + " const\n" + bType + "\n" + ToString.formatComma(constDef) + TokenType.SEMICN + " ;\n" + "<ConstDecl>";
     }
 }

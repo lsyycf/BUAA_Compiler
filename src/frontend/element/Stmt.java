@@ -14,6 +14,7 @@ import java.util.*;
 // | <CONTINUETK> <SEMICN> // i
 // | <RETURNTK> [Exp] <SEMICN> // i
 // | <PRINTFTK> <LPARENT> <STRCON> { <COMMA> Exp } <RPARENT> <SEMICN> // i j
+// | <WHILETK> <LPARENT> Cond <RPARENT> Stmt
 public class Stmt {
     private final ArrayList<Exp> expPrint = new ArrayList<>();
     private LVal lVal;
@@ -29,6 +30,8 @@ public class Stmt {
     private Stmt stmtFor;
     private Exp expReturn;
     private String strCon;
+    private Cond condWhile;
+    private Stmt stmtWhile;
     private int lineIndex;
     private StmtType stmtType;
 
@@ -67,6 +70,12 @@ public class Stmt {
         this.forStmtRight = forStmtRight;
         this.stmtFor = stmt;
         this.stmtType = StmtType.For;
+    }
+
+    public Stmt(Cond cond, Stmt stmt) {
+        this.condWhile = cond;
+        this.stmtWhile = stmt;
+        this.stmtType = StmtType.While;
     }
 
     public Stmt(Token token) {
@@ -153,6 +162,14 @@ public class Stmt {
         this.expReturn = null;
     }
 
+    public Cond getCondWhile() {
+        return condWhile;
+    }
+
+    public Stmt getStmtWhile() {
+        return stmtWhile;
+    }
+
     public void clear() {
         this.stmtType = StmtType.Exp;
         this.exp = null;
@@ -229,10 +246,17 @@ public class Stmt {
                 }
                 sb.append(TokenType.SEMICN).append(" ;\n");
             }
+            case While -> {
+                sb.append(TokenType.WHILETK).append(" while\n");
+                sb.append(TokenType.LPARENT).append(" (\n");
+                sb.append(condWhile).append("\n");
+                sb.append(TokenType.RPARENT).append(" )\n");
+                sb.append(stmtWhile).append("\n");
+            }
         }
         sb.append("<Stmt>");
         return sb.toString();
     }
 
-    public enum StmtType {LVal, Exp, Block, If, For, Break, Continue, Return, Print}
+    public enum StmtType {LVal, Exp, Block, If, For, Break, Continue, Return, Print, While}
 }

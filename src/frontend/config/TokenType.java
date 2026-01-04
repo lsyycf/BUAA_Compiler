@@ -15,6 +15,7 @@ public enum TokenType {
     RETURNTK(true, "return"),
     VOIDTK(true, "void"),
     PRINTFTK(true, "printf"),
+    WHILETK(true, "while"),
     AND(false, "&&"),
     OR(false, "\\|\\|"),
     LEQ(false, "<="),

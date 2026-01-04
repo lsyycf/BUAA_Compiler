@@ -286,6 +286,15 @@ public class Parser {
         }
     }
 
+    private Stmt parseWhileStmt() {
+        reader.consume(TokenType.WHILETK);
+        reader.consume(TokenType.LPARENT);
+        Cond cond = parseCond();
+        consumeError(TokenType.RPARENT);
+        Stmt stmt = parseStmt();
+        return new Stmt(cond, stmt);
+    }
+
     // Stmt → LVal <ASSIGN> Exp <SEMICN> // i
     // | [Exp] <SEMICN> // i
     // | Block
@@ -295,6 +304,7 @@ public class Parser {
     // | <CONTINUETK> <SEMICN> // i
     // | <RETURNTK> [Exp] <SEMICN> // i
     // | <PRINTFTK> <LPARENT> <STRCON> { <COMMA> Exp } <RPARENT> <SEMICN> // i j
+    // | <WHILETK> <LPARENT> Cond <RPARENT> Stmt
     private Stmt parseStmt() {
         Token t = reader.peek(0);
         return switch (t.type()) {
@@ -302,6 +312,7 @@ public class Parser {
             case IFTK -> parseIfStmt();
             case FORTK -> parseForStmtPart();
             case PRINTFTK -> parsePrintStmt();
+            case WHILETK -> parseWhileStmt();
             case RETURNTK -> {
                 Token t1 = reader.peek(0);
                 reader.consume(TokenType.RETURNTK);

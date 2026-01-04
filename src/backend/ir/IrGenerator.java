@@ -232,6 +232,22 @@ public class IrGenerator {
         }
     }
 
+    private void generateWhileStmt(Stmt stmt, SymbolTree node) {
+        String labelCond = newLabel();
+        String labelBody = newLabel();
+        String labelEnd = newLabel();
+        breakLabels.push(labelEnd);
+        continueLabels.push(labelCond);
+        addQuad("label", null, null, labelCond);
+        generateCond(stmt.getCondWhile(), labelBody, labelEnd, node);
+        addQuad("label", null, null, labelBody);
+        generateStmt(stmt.getStmtWhile(), node);
+        addQuad("j", null, null, labelCond);
+        addQuad("label", null, null, labelEnd);
+        breakLabels.pop();
+        continueLabels.pop();
+    }
+
     // Stmt → LVal <ASSIGN> Exp <SEMICN>
     // | [Exp] <SEMICN>
     // | Block
@@ -241,6 +257,7 @@ public class IrGenerator {
     // | <CONTINUETK> <SEMICN>
     // | <RETURNTK> [Exp] <SEMICN>
     // | <PRINTFTK> <LPARENT> <STRCON> { <COMMA> Exp } <RPARENT> <SEMICN>
+    // | <WHILETK> <LPARENT> Cond <RPARENT> Stmt
     private void generateStmt(Stmt stmt, SymbolTree node) {
         switch (stmt.getStmtType()) {
             case LVal -> generateLvalStmt(stmt, node);
@@ -256,6 +273,7 @@ public class IrGenerator {
             }
             case If -> generateIfStmt(stmt, node);
             case For -> generateForStmtPart(stmt, node);
+            case While -> generateWhileStmt(stmt, node);
             case Break -> {
                 if (!breakLabels.isEmpty()) {
                     addQuad("j", null, null, breakLabels.peek());

@@ -332,6 +332,7 @@ public class Visitor {
     // | <CONTINUETK> <SEMICN>
     // | <RETURNTK> [Exp] <SEMICN>
     // | <PRINTFTK> <LPARENT> <STRCON> { <COMMA> Exp } <RPARENT> <SEMICN>
+    // | <WHILETK> <LPARENT> Cond <RPARENT> Stmt
     private void visitStmt(Stmt stmt, SymbolTree node) {
         switch (stmt.getStmtType()) {
             case Block -> {
@@ -340,6 +341,12 @@ public class Visitor {
             }
             case For -> visitForStmtPart(stmt, node);
             case Print -> visitPrintStmt(stmt, node);
+            case While -> {
+                loopDeep += 1;
+                visitCond(stmt.getCondWhile(), node);
+                visitStmt(stmt.getStmtWhile(), node);
+                loopDeep -= 1;
+            }
             case Exp -> {
                 if (stmt.getExp() != null) {
                     visitExp(stmt.getExp(), node);
