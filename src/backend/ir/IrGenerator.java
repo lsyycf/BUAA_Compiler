@@ -134,14 +134,18 @@ public class IrGenerator {
     // VarDef → <IDENFR> [ <LBRACK> ConstExp <RBRACK> ] | <IDENFR> [ <LBRACK> ConstExp <RBRACK> ] <ASSIGN> InitVal
     private void generateVarDef(VarDef varDef, SymbolTree node) {
         String name = generateIndex(varDef, node);
-        if (varDef.getVatDefType() == VarDef.VatDefType.Assign) {
-            generateInitVal(varDef.getInitVal(), name, node);
+        int size = 0;
+        if (varDef.getConstExp() != null) {
+            size = Visitor.evaConstExp(varDef.getConstExp(), node);
+        }
+        if (varDef.getVarDefType() == VarDef.VarDefType.Assign) {
+            generateInitVal(varDef.getInitVal(), name, size, node);
         }
         isStatic = false;
     }
 
     // InitVal → Exp | <LBRACE> [ Exp { <COMMA> Exp } ] <RBRACE>
-    private void generateInitVal(InitVal initVal, String name, SymbolTree node) {
+    private void generateInitVal(InitVal initVal, String name, int size, SymbolTree node) {
         if (initVal.getInitValType() == InitVal.InitValType.Exp) {
             String value = generateExp(initVal.getExp(), node);
             addQuad("assign", value, null, name);
@@ -151,6 +155,12 @@ public class IrGenerator {
                 String value = generateExp(expArr.get(i), node);
                 String index = String.valueOf(i);
                 addQuad("store", value, index, name);
+            }
+            if (!global && !isStatic) {
+                for (int i = expArr.size(); i < size; i++) {
+                    String index = String.valueOf(i);
+                    addQuad("store", "0", index, name);
+                }
             }
         }
     }

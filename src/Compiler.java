@@ -15,7 +15,7 @@ import java.util.*;
 public class Compiler {
     private static final ErrorList errorList = new ErrorList();
     private static final Version version = Version.code;
-    private static final boolean optimize = true;
+    private static final boolean optimize = false;
 
     public static void main(String[] args) throws IOException {
         ArrayList<String> lines = FileIO.readlines("testfile.txt");

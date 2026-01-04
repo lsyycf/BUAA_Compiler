@@ -215,37 +215,16 @@ public class MipsGenerator {
         textSection.append("j ").append(currentFunc.getName()).append("_end\n");
     }
 
-    private boolean immediate(String op, String arg1, String arg2, String result) {
-        if (Calculate.change(op) == null) {
-            return false;
-        }
-        String opNew = Calculate.change(op);
-        if (Calculate.isNumber(arg2)) {
-            load(arg1, "$t0");
-            textSection.append(opNew).append(" $t0, $t0, ").append(arg2).append("\n");
-            store(result, "$t0");
-            return true;
-        } else if (Calculate.isNumber(arg1) && Calculate.canSwap(op)) {
-            load(arg2, "$t0");
-            textSection.append(opNew).append(" $t0, $t0, ").append(arg1).append("\n");
-            store(result, "$t0");
-            return true;
-        }
-        return false;
-    }
-
     private void generateBinaryOp(String op, String arg1, String arg2, String result) {
-        if (!immediate(op, arg1, arg2, result)) {
-            load(arg1, "$t0");
-            load(arg2, "$t1");
-            if (op.equals("mod")) {
-                textSection.append("div $t0, $t1\n");
-                textSection.append("mfhi $t0\n");
-            } else {
-                textSection.append(op).append(" $t0, $t0, $t1\n");
-            }
-            store(result, "$t0");
+        load(arg1, "$t0");
+        load(arg2, "$t1");
+        if (op.equals("mod")) {
+            textSection.append("div $t0, $t1\n");
+            textSection.append("mfhi $t0\n");
+        } else {
+            textSection.append(op).append(" $t0, $t0, $t1\n");
         }
+        store(result, "$t0");
     }
 
     private void generateArrayStore(String value, String index, String arrayName) {

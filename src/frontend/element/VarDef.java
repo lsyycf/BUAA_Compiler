@@ -9,14 +9,14 @@ public class VarDef implements Def {
     private final String idenfr;
     private final int lineIndex;
     private final ConstExp constExp;
-    private final VatDefType vatDefType;
+    private final VarDefType varDefType;
     private InitVal initVal;
 
     public VarDef(Token token, ConstExp constExp) {
         this.idenfr = token.token();
         this.lineIndex = token.lineIndex();
         this.constExp = constExp;
-        this.vatDefType = VatDefType.Idenfr;
+        this.varDefType = VarDefType.Idenfr;
     }
 
     public VarDef(Token token, ConstExp constExp, InitVal initVal) {
@@ -24,7 +24,7 @@ public class VarDef implements Def {
         this.lineIndex = token.lineIndex();
         this.constExp = constExp;
         this.initVal = initVal;
-        this.vatDefType = VatDefType.Assign;
+        this.varDefType = VarDefType.Assign;
     }
 
     public String getIdenfr() {
@@ -43,17 +43,15 @@ public class VarDef implements Def {
         return initVal;
     }
 
-    public VatDefType getVatDefType() {
-        return vatDefType;
+    public VarDefType getVarDefType() {
+        return varDefType;
     }
 
     @Override
     public String toString() {
-        // <IDENFR> [ <LBRACK> ConstExp <RBRACK> ] | <IDENFR> [ <LBRACK> ConstExp
-        // <RBRACK> ] <ASSIGN> InitVal
         StringBuilder sb = new StringBuilder();
         sb.append(ToString.formatIdenfr(idenfr, constExp));
-        if (vatDefType == VatDefType.Assign) {
+        if (varDefType == VarDefType.Assign) {
             sb.append(TokenType.ASSIGN).append(" =\n");
             sb.append(initVal).append("\n");
         }
@@ -61,7 +59,7 @@ public class VarDef implements Def {
         return sb.toString();
     }
 
-    public enum VatDefType {
+    public enum VarDefType {
         Idenfr, Assign
     }
 }
