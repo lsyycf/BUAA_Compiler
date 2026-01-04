@@ -327,8 +327,8 @@ public class IrGenerator {
         addQuad("label", null, null, labelCond);
         if (stmt.getCondFor() != null) {
             generateCond(stmt.getCondFor(), labelBody, labelEnd, node);
-            addQuad("label", null, null, labelBody);
         }
+        addQuad("label", null, null, labelBody);
         generateStmt(stmt.getStmtFor(), node);
         addQuad("label", null, null, labelUpdate);
         if (stmt.getForStmtRight() != null) {
