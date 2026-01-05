@@ -189,7 +189,7 @@ public class Func {
         HashMap<Block, HashSet<Block>> doms = computeDominators();
         HashMap<Block, HashSet<Block>> loops = findNaturalLoops(doms);
         for (Map.Entry<Block, HashSet<Block>> entry : loops.entrySet()) {
-            processLoop(entry.getKey(), entry.getValue());
+            processLoop(entry.getKey(), entry.getValue(), doms);
         }
         irList.getIRList().clear();
         for (Block block : blockList) {
@@ -263,9 +263,26 @@ public class Func {
         return loops;
     }
 
-    private void processLoop(Block header, HashSet<Block> loopBody) {
+    private void processLoop(Block header, HashSet<Block> loopBody, HashMap<Block, HashSet<Block>> doms) {
         HashSet<String> definedInLoop = new HashSet<>();
         HashMap<String, Integer> defCounts = new HashMap<>();
+        HashMap<String, List<Block>> useBlocks = new HashMap<>();
+        HashSet<Block> loopExits = new HashSet<>();
+        for (Block b : loopBody) {
+            for (Block next : b.getNexts()) {
+                if (!loopBody.contains(next)) {
+                    loopExits.add(b);
+                }
+            }
+        }
+        HashSet<String> usedOutsideLoop = getStrings(loopBody);
+        List<Block> backEdges = new ArrayList<>();
+        for (Block pred : header.getPrevs()) {
+            if (loopBody.contains(pred)) {
+                backEdges.add(pred);
+            }
+        }
+
         for (Block b : loopBody) {
             for (Quadruple q : b.getIrList().getIRList()) {
                 String res = q.result();
@@ -273,8 +290,18 @@ public class Func {
                     definedInLoop.add(res);
                     defCounts.put(res, defCounts.getOrDefault(res, 0) + 1);
                 }
+                String[] args = {q.arg1(), q.arg2()};
+                for (String arg : args) {
+                    if (arg != null && !Calculate.isNumber(arg) && !arg.equals("_")) {
+                        useBlocks.computeIfAbsent(arg, k -> new ArrayList<>()).add(b);
+                    }
+                }
+                if (q.op().equals("store") && res != null && !Calculate.isNumber(res) && !res.equals("_")) {
+                    useBlocks.computeIfAbsent(res, k -> new ArrayList<>()).add(b);
+                }
             }
         }
+
         ArrayList<Quadruple> invariants = new ArrayList<>();
         HashMap<Quadruple, Block> quadToBlock = new HashMap<>();
         boolean changed = true;
@@ -291,7 +318,48 @@ public class Func {
                     boolean arg1Ok = isOperandInvariant(arg1, definedInLoop, invariantSet);
                     boolean arg2Ok = isOperandInvariant(arg2, definedInLoop, invariantSet);
                     boolean resOk = defCounts.getOrDefault(res, 0) == 1;
-                    if (arg1Ok && arg2Ok && resOk) {
+
+                    boolean dominatesUses = true;
+                    if (res != null && useBlocks.containsKey(res)) {
+                        for (Block useB : useBlocks.get(res)) {
+                            if (!doms.containsKey(useB) || !doms.get(useB).contains(b)) {
+                                dominatesUses = false;
+                                break;
+                            }
+                            if (b == useB) {
+                                int defIdx = b.getIrList().getIRList().indexOf(q);
+                                for (int i = 0; i < defIdx; i++) {
+                                    Quadruple prev = b.getIrList().getIRList().get(i);
+                                    boolean isUse = (prev.arg1() != null && prev.arg1().equals(res)) || (prev.arg2() != null && prev.arg2().equals(res)) || (prev.op().equals("store") && prev.result().equals(res));
+                                    if (isUse) {
+                                        dominatesUses = false;
+                                        break;
+                                    }
+                                }
+                                if (!dominatesUses) break;
+                            }
+                        }
+                    }
+
+                    boolean executesOnEveryIter = true;
+                    for (Block backEdge : backEdges) {
+                        if (doms.containsKey(backEdge) && !doms.get(backEdge).contains(b)) {
+                            executesOnEveryIter = false;
+                            break;
+                        }
+                    }
+
+                    boolean safeToMoveOut = true;
+                    if (res != null && usedOutsideLoop.contains(res)) {
+                        for (Block exit : loopExits) {
+                            if (!doms.containsKey(exit) || !doms.get(exit).contains(b)) {
+                                safeToMoveOut = false;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (arg1Ok && arg2Ok && resOk && dominatesUses && executesOnEveryIter && safeToMoveOut) {
                         invariantSet.add(q);
                         invariants.add(q);
                         quadToBlock.put(q, b);
@@ -302,6 +370,25 @@ public class Func {
         }
         if (invariants.isEmpty()) return;
         insertPreHeaderAndMove(header, loopBody, invariants, quadToBlock);
+    }
+
+    private HashSet<String> getStrings(HashSet<Block> loopBody) {
+        HashSet<String> usedOutsideLoop = new HashSet<>();
+        for (Block b : blockList) {
+            if (loopBody.contains(b)) continue;
+            for (Quadruple q : b.getIrList().getIRList()) {
+                String[] args = {q.arg1(), q.arg2()};
+                for (String arg : args) {
+                    if (arg != null && !Calculate.isNumber(arg) && !arg.equals("_")) {
+                        usedOutsideLoop.add(arg);
+                    }
+                }
+                if (q.op().equals("store") && q.result() != null && !Calculate.isNumber(q.result()) && !q.result().equals("_")) {
+                    usedOutsideLoop.add(q.result());
+                }
+            }
+        }
+        return usedOutsideLoop;
     }
 
     private boolean canBeMoved(Quadruple q) {
@@ -373,31 +460,47 @@ public class Func {
         return new Value(ValType.BOTTOM);
     }
 
-    private Value getValue(String arg, HashMap<String, Value> state) {
+    private Value getValue(String arg, HashMap<String, Value> state, HashSet<String> localVars) {
         if (Calculate.isNumber(arg)) return new Value(Integer.parseInt(arg));
-        return state.getOrDefault(arg, new Value(ValType.TOP));
+
+        if (state.containsKey(arg)) {
+            return state.get(arg);
+        }
+
+        if (localVars.contains(arg)) {
+            return new Value(ValType.TOP);
+        } else {
+            return new Value(ValType.BOTTOM);
+        }
     }
 
     private HashMap<String, Value> mergePredecessors(Block block, HashMap<Block, HashMap<String, Value>> outStates) {
         HashMap<String, Value> inState = new HashMap<>();
-        if (!block.getPrevs().isEmpty()) {
+        if (block.getPrevs().isEmpty()) {
+            return inState;
+        }
+        HashSet<String> allVars = new HashSet<>();
+        for (Block prev : block.getPrevs()) {
+            if (outStates.containsKey(prev)) {
+                allVars.addAll(outStates.get(prev).keySet());
+            }
+        }
+        for (String var : allVars) {
+            Value result = null;
             boolean first = true;
+
             for (Block prev : block.getPrevs()) {
-                if (!outStates.containsKey(prev)) continue;
-                HashMap<String, Value> prevOut = outStates.get(prev);
+                Value prevVal = outStates.getOrDefault(prev, new HashMap<>()).getOrDefault(var, new Value(ValType.TOP));
+
                 if (first) {
-                    inState.putAll(prevOut);
+                    result = prevVal;
                     first = false;
                 } else {
-                    HashSet<String> allVars = new HashSet<>();
-                    allVars.addAll(inState.keySet());
-                    allVars.addAll(prevOut.keySet());
-                    for (String var : allVars) {
-                        Value v1 = inState.getOrDefault(var, new Value(ValType.TOP));
-                        Value v2 = prevOut.getOrDefault(var, new Value(ValType.TOP));
-                        inState.put(var, meet(v1, v2));
-                    }
+                    result = meet(result, prevVal);
                 }
+            }
+            if (result != null && result.type != ValType.TOP) {
+                inState.put(var, result);
             }
         }
         return inState;
@@ -439,13 +542,13 @@ public class Func {
                     currentVars.put(arg1, new Value(ValType.BOTTOM));
                 } else if (op.equals("call")) {
                     handleCallSideEffects(res, currentVars, localVars);
-                } else if (res != null && res.startsWith("ir_")) {
+                } else if (res != null && !res.equals("_")) {
                     if (op.equals("assign")) {
-                        Value val = getValue(arg1, currentVars);
+                        Value val = getValue(arg1, currentVars, localVars);
                         currentVars.put(res, val);
                     } else if (Calculate.canCalculate(op)) {
-                        Value v1 = getValue(arg1, currentVars);
-                        Value v2 = getValue(arg2, currentVars);
+                        Value v1 = getValue(arg1, currentVars, localVars);
+                        Value v2 = getValue(arg2, currentVars, localVars);
                         Value calculated = calculateConstValue(op, v1, v2);
                         currentVars.put(res, Objects.requireNonNullElseGet(calculated, () -> new Value(ValType.BOTTOM)));
                     } else {
@@ -456,12 +559,13 @@ public class Func {
             if (!currentVars.equals(outStates.get(block))) {
                 outStates.put(block, currentVars);
                 for (Block next : block.getNexts()) {
-                    if (outStates.containsKey(next) && !worklist.contains(next)) {
+                    if (!worklist.contains(next)) {
                         worklist.add(next);
                     }
                 }
             }
         }
+
         for (Block block : blockList) {
             HashMap<String, Value> currentVars = mergePredecessors(block, outStates);
             ArrayList<Quadruple> newIr = new ArrayList<>();
@@ -474,6 +578,7 @@ public class Func {
                 String newArg1 = arg1;
                 String newArg2 = arg2;
                 boolean isDecl = op.equals("alloc") || op.equals("array_alloc") || op.equals("func_param");
+
                 if (!isDecl && arg1 != null && currentVars.containsKey(arg1) && currentVars.get(arg1).type == ValType.CONST) {
                     newArg1 = String.valueOf(currentVars.get(arg1).val);
                 }
@@ -501,12 +606,12 @@ public class Func {
                     handleCallSideEffects(res, currentVars, localVars);
                 } else if (res != null && res.startsWith("ir_")) {
                     if (op.equals("assign")) {
-                        Value val = getValue(newArg1, currentVars);
+                        Value val = getValue(newArg1, currentVars, localVars);
                         currentVars.put(res, val);
                         newIr.add(newQ);
                     } else if (Calculate.canCalculate(op)) {
-                        Value v1 = getValue(newArg1, currentVars);
-                        Value v2 = getValue(newArg2, currentVars);
+                        Value v1 = getValue(newArg1, currentVars, localVars);
+                        Value v2 = getValue(newArg2, currentVars, localVars);
                         Value calculated = calculateConstValue(op, v1, v2);
 
                         if (calculated != null && calculated.type == ValType.CONST) {
